@@ -15,8 +15,6 @@ try:
 	code = normalize(sys.argv[1])
 	
 	code = code.replace(r'\n', '\n')
-	print("/%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-	print(code)
 	tree = code2tree(code)
 	treant = to_treant(tree)
 	analysis = analyze(tree)

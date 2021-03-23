@@ -13,6 +13,28 @@ def code2tree(code):
 	ret['code'] = code
 	return ret
 
+VARIABLES = dict()
+
+def eval_binop(node):
+	if get_type(node) == "Constant":
+		return node
+
+	if get_type(node) == "Name":
+		return VARIABLES[node.id]
+		return ast.Constant(VARIABLES[node.id])
+	
+	elif get_type(node) == "BinOp":
+		cp = copy.deepcopy(node)
+		cp.left = eval_binop(cp.left)
+		cp.right = eval_binop(cp.right)
+		
+		expr = ast.Expression(body=cp)
+		ast.fix_missing_locations(expr)
+		exe = compile(expr, filename="", mode="eval")
+		return ast.Constant(eval(exe))
+
+VARIABLES = dict()
+
 def node2tree(node, kod_mtx):
 	d = dict()
 	d['type'] = get_type(node)
@@ -39,18 +61,26 @@ def node2tree(node, kod_mtx):
 			d['code'] += kod_mtx[node.end_lineno-1][:node.end_col_offset]
 		else:
 			raise Exception("baj a kód kiolvasással")
-		
-		# print(node.lineno, node.end_lineno, node.col_offset, node.end_col_offset)
 	
 	if d['type'] == "BinOp":
-		d['eval'] = eval(d['code'])
+		d['eval'] = eval_binop(node).value
+	elif d['type'] == "Name":
+		d['eval'] = eval_binop(VARIABLES[node.id]).value
+	elif d['type'] == "Constant":
+		d['eval'] = node.value
 	else:
 		d['eval'] = None
+	
+	if d['type'] == "Assign":
+		targets = node.targets
+		t = targets[0].id
+		VARIABLES[t] = node.value
+		print(VARIABLES)
 		
 	
 	d['children'] = [node2tree(child, kod_mtx) for child in ast.iter_child_nodes(node)]
 	return d
-	
+
 def dfs(node, f):
 	if isinstance(node, list):
 		pass
@@ -62,7 +92,7 @@ def dfs(node, f):
 		print("egyikse mert", type(node))
 
 def to_html(text):
-	return text.replace('\n', ';').replace('\t', '    ')
+	return text.replace('\n', ';').replace('\t', '	')
 
 def to_treant(node):
 	ret = dict()
@@ -99,6 +129,7 @@ def analyze(node, ret=None, base_code=None):
 	if pos:
 		ret.append({
 			'code': base_code,
+			'evaluation': node['eval'],
 			'highlight': pos
 		})
 	for child in node['children']:
