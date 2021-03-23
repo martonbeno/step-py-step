@@ -21,7 +21,7 @@ def eval_binop(node):
 
 	if get_type(node) == "Name":
 		return VARIABLES[node.id]
-		return ast.Constant(VARIABLES[node.id])
+		# return ast.Constant(VARIABLES[node.id])
 	
 	elif get_type(node) == "BinOp":
 		cp = copy.deepcopy(node)
@@ -74,7 +74,7 @@ def node2tree(node, kod_mtx):
 	if d['type'] == "Assign":
 		targets = node.targets
 		t = targets[0].id
-		VARIABLES[t] = node.value
+		VARIABLES[t] = eval_binop(node.value)
 		print(VARIABLES)
 		
 	
