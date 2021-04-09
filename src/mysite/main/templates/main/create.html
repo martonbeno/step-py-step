@@ -2,23 +2,79 @@
 	<head>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 		<script>
-			function irj(){
-				console.log("ok")
-				let szoveg = document.getElementById('ta').value;
-				//document.getElementById('ki').innerHTML = szoveg;
+			var SOURCE_CODE = '';
+			var DATA = {'lineno':1, 'localvars':[]};
+			
+			
+			function py_api_request(command, args, callback){
 				$.ajax({
 					url: '/api/',
 					method: 'POST',
 					data: {
-						x: szoveg,
+						command: command,
+						args: JSON.stringify(args),
 						csrfmiddlewaretoken: '{{ csrf_token }}'
 					},
-					success: function(data){
-						console.log(data);
-					}
+					success: callback
 				}).done(function(msg) {
-					document.getElementById('ki').innerHTML = szoveg;
+					//semmi
 				});
+			}
+			
+			function readcode(){
+				let source_code = document.getElementById('ta').value;
+				let args = { 'source_code': source_code };
+				py_api_request('start', args, function(data){
+					SOURCE_CODE = data;
+					document.getElementById('ki').innerHTML = SOURCE_CODE;
+				});
+				
+			}
+			
+			function step(){
+				py_api_request('step', {}, function(data){
+					DATA = JSON.parse(data);
+					let codeMtx = makeCodeMtx();
+					let varMtx = makeVarMtx();
+					document.getElementById('ki').innerHTML = makeTableHTML(codeMtx);
+					document.getElementById('variables').innerHTML = makeTableHTML(varMtx);
+				});
+			}
+			
+			function makeCodeMtx(){
+				let lines = SOURCE_CODE.split('\n');
+				let ret = [];
+				for(let i=0; i<lines.length; i++){
+					console.log(lines[i]);
+					let maybeArrow = DATA['lineno'] == i+1 ? '➔' : '';
+					ret.push([maybeArrow, lines[i]]);
+				}
+				return ret;
+			}
+			
+			function makeVarMtx(){
+				ret = [];
+				for(let key in DATA['localvars']){
+					ret.push([ key, DATA['localvars'][key] ]);
+				}
+				return ret;
+			}
+			
+			
+			//stackoverflow
+			function makeTableHTML(myArray) {
+				var result = "<table border=1>";
+				for(var i=0; i<myArray.length; i++) {
+					result += "<tr>";
+					for(var j=0; j<myArray[i].length; j++){
+						result += "<td>"+myArray[i][j]+"</td>";
+					}
+					result += "</tr>";
+				}
+				result += "</table>";
+
+				//document.getElementById('ki').innerHTML = result;
+				return result;
 			}
 		</script>
 	</head>
@@ -29,9 +85,14 @@
 			<button type="submit" name="save">Create New</button>
 		</form>
 		
-		<button onclick="irj()">irj</button>
+		<button onclick="readcode()">Read code</button><br>
+		<button onclick="step()">Step</button>
 		
-		<p id="ki"></p>
+		<pre>
+			<p id="ki"></p>
+		</pre>
+		<br>
+		<p id="variables"></p>
 		
 	</body>
 </html>
