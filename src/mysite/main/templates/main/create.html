@@ -62,7 +62,7 @@
 			function makeVarMtx(){
 				ret = [];
 				for(let key in DATA['localvars']){
-					ret.push([ key, DATA['localvars'][key] ]);
+					ret.push([ key, DATA['localvars'][key]['type'], DATA['localvars'][key]['value'] ]);
 				}
 				return ret;
 			}

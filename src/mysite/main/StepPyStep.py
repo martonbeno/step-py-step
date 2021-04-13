@@ -1,6 +1,17 @@
 import pdb
 import copy
 import multiprocessing
+import re
+
+def get_methods(user_defined_class):
+    ret = []
+    for m in dir(user_defined_class):
+        if m.startswith("__"):
+            continue
+        a = getattr(user_defined_class, m)
+        if callable(a):
+            ret.append(a)
+    return ret
 
 class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
@@ -51,7 +62,7 @@ class StepPyStep(pdb.Pdb):
         return ret
         
     def cmdloop(self, intro=None):
-        import inspect, copy
+        import inspect, copy, re
         
         while True:
 
@@ -82,18 +93,83 @@ class StepPyStep(pdb.Pdb):
             elif msg == "get":
 
                 ret = dict()
-                ret['localvars'] = dict()
 
-                #localvars = dict() #key: variable name, value dict: {"type": typename, "value": value string}
+                localvars = dict() #key: variable name, value dict: {"type": typename, "value": value string}
+                localvars = dict()
+                '''
+                localvars:
+                {
+                    3242847293: #memory address
+                    {
+                        "names":['a', 'b'],
+                        "type": "class",
+                        "value":
+                        {
+                            "class_name":"MyClass",
+                            "variables":
+                            {
+                                43824328:
+                                {
+                                    "names": ["a"],
+                                    "type": "int",
+                                    "value": "4"
+                                },
+                                8473329847:
+                                {
+                                    "names": ["f"],
+                                    "type": "function",
+                                    "value": "def f(): return 42"
+                                }
+                            }
+                        }
+                    }
+                }
+                '''
 
 
-                #for k in self.curframe.f_locals:
-                #    ret['localvars']
+                for k in self.curframe.f_locals:
+                    if k.startswith("__"):
+                        continue
 
+                    val = self.curframe.f_locals[k]
+                    typ = type(val)
+                    t = re.findall(r"'.+'", str(typ))[0][1:-1] #returns the substring between apostrophes in <class 'str'>
+                    t = val.__class__.__name__
+
+                    # if user-defined-class-type
+                    if re.match(r'^__main__\..+$'):
+                        #TODO class outside of main module
+                        t = re.findall(r'\.(.+)') #returns Classname from __main__.Classname
+                        c = self.curframe.f_locals[k]
+                        v = inspect.getsource()
+
+                    elif t == "function":
+                        f = self.curframe.f_locals[k] # the function itself
+                        v = inspect.getsource(f) #the source code of the function
+                    else:
+                        val = self.curframe.f_locals[k]
+                        typ = type(val)
+                        is_builtin = typ.__class__.__module__ == 'builtins'
+
+                        if is_builtin:
+                            t = re.findall(r"'.+'", str(typ))[0][1:-1] #returns the substring between apostrophes in <class 'str'>
+                            v = str(val)
+                        else:
+                            t = None
+                            v = None
+
+
+                    localvars[k] = {"type": t, "value": v}
+
+                ret['localvars'] = localvars
+
+
+                '''
                 for k,v in filter(lambda x:not x[0].startswith("__") and isinstance(x[1], int), self.curframe.f_locals.items()):
                     if k.startswith("__"):
                         continue
                     ret['localvars'][k] = v
+                '''
 
 
 

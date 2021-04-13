@@ -24,29 +24,33 @@ def create(response):
 	return render(response, "main/create.html", {'form':form})
 
 def api(request):
-	# return HttpResponse("okézsoké")
-	with open("ki.log", 'w+') as f:
-		for k,v in request.POST.items():
-			f.write(f"{k}: {v}\n")
 
 	
-		command = request.POST['command']
-		args = json.loads(request.POST['args'])
-		
-		
-		if command == "start":
-			source_code = args['source_code']
-			ret = SPS_MODEL.start(source_code)
-		
-		elif command == "step":
-			SPS_MODEL.request("step")
-			ret = SPS_MODEL.request("get")
-			ret = json.dumps(ret)
-			#print(ret)
+	command = request.POST['command']
+	args = json.loads(request.POST['args'])
+	
+	
+	if command == "start":
+		global SPS_MODEL
 
-		elif command == "exit":
+		try:
 			SPS_MODEL.request("exit")
-			ret = json.dumps({'exit':'yes'})
+		except Exception:
+			pass
+
+		SPS_MODEL = StepPyStep()
+		source_code = args['source_code']
+		ret = SPS_MODEL.start(source_code)
+	
+	elif command == "step":
+		SPS_MODEL.request("step")
+		ret = SPS_MODEL.request("get")
+		ret = json.dumps(ret)
+		#print(ret)
+
+	elif command == "exit":
+		SPS_MODEL.request("exit")
+		ret = json.dumps({'exit':'yes'})
 	
 	
 	return HttpResponse(f"{ret}")
