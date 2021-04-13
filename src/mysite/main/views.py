@@ -42,7 +42,11 @@ def api(request):
 			SPS_MODEL.request("step")
 			ret = SPS_MODEL.request("get")
 			ret = json.dumps(ret)
-			print(ret)
+			#print(ret)
+
+		elif command == "exit":
+			SPS_MODEL.request("exit")
+			ret = json.dumps({'exit':'yes'})
 	
 	
 	return HttpResponse(f"{ret}")

@@ -41,6 +41,13 @@
 				});
 			}
 			
+			function exit_code(){
+				py_api_request('exit', {}, function(data){
+					DATA = JSON.parse(data);
+					console.log("kiléptem");
+				});
+			}
+			
 			function makeCodeMtx(){
 				let lines = SOURCE_CODE.split('\n');
 				let ret = [];
@@ -73,9 +80,9 @@
 				}
 				result += "</table>";
 
-				//document.getElementById('ki').innerHTML = result;
 				return result;
 			}
+
 		</script>
 	</head>
 	<body>
@@ -86,7 +93,8 @@
 		</form>
 		
 		<button onclick="readcode()">Read code</button><br>
-		<button onclick="step()">Step</button>
+		<button onclick="step()">Step</button><br>
+		<button onclick="exit_code()">Exit code</button>
 		
 		<pre>
 			<p id="ki"></p>

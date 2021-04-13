@@ -8,7 +8,7 @@ class StepPyStep(pdb.Pdb):
         self.request_q = multiprocessing.Queue()
         self.answer_q = multiprocessing.Queue()
         
-        path = "/home/steppystep/Desktop/step-py-step/src/mysite/"
+        path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
         self.filename = path + "tmp.py"
         '''
         self.source_code = kwargs['source_code']
@@ -20,7 +20,11 @@ class StepPyStep(pdb.Pdb):
         
         # self._runscript(self.filename)
     
-    def start(self, source_code):
+    def start(self, source_code=None):
+        if source_code is None:
+            with open(self.filename, 'r', encoding='utf-8') as f:
+                source_code = f.read()
+
         self.create_file(source_code)
         self.p = multiprocessing.Process(target=self.rs, args=())
         self.p.start()
@@ -80,6 +84,12 @@ class StepPyStep(pdb.Pdb):
                 ret = dict()
                 ret['localvars'] = dict()
 
+                #localvars = dict() #key: variable name, value dict: {"type": typename, "value": value string}
+
+
+                #for k in self.curframe.f_locals:
+                #    ret['localvars']
+
                 for k,v in filter(lambda x:not x[0].startswith("__") and isinstance(x[1], int), self.curframe.f_locals.items()):
                     if k.startswith("__"):
                         continue
@@ -100,7 +110,9 @@ if __name__ == "__main__":
     filename = "ja2.py"
     filename = "ja.py"
 
-    p = StepPyStep(filename=filename)
+    #p = StepPyStep(filename=filename)
+    p = StepPyStep()
+    p.start()
 
     while True:
         print("várom a parancsokat")
