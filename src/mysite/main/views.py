@@ -26,12 +26,10 @@ def create(response):
 def api(request):
 	# return HttpResponse("okézsoké")
 	with open("ki.log", 'w+') as f:
-		f.write("eddigjo0s\n")
 		for k,v in request.POST.items():
 			f.write(f"{k}: {v}\n")
 
 	
-		f.write("eddigjo111\n")
 		command = request.POST['command']
 		args = json.loads(request.POST['args'])
 		
