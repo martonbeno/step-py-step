@@ -15,6 +15,7 @@ def get_methods(user_defined_class):
 
 class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
+        print("létrejövök")
 
         self.request_q = multiprocessing.Queue()
         self.answer_q = multiprocessing.Queue()
@@ -32,10 +33,12 @@ class StepPyStep(pdb.Pdb):
         # self._runscript(self.filename)
     
     def start(self, source_code=None):
+        print("startoljunk el")
         if source_code is None:
             with open(self.filename, 'r', encoding='utf-8') as f:
                 source_code = f.read()
 
+        print("uccu neki")
         self.create_file(source_code)
         self.p = multiprocessing.Process(target=self.rs, args=())
         self.p.start()
@@ -94,7 +97,7 @@ class StepPyStep(pdb.Pdb):
 
                 ret = dict()
 
-                localvars = dict() #key: variable name, value dict: {"type": typename, "value": value string}
+                
                 localvars = dict()
                 '''
                 localvars:
@@ -123,12 +126,25 @@ class StepPyStep(pdb.Pdb):
                             }
                         }
                     }
+                    32427849328:
+                    {
+                        "names":['x'],
+                        "type": "int",
+                        "value": "100"
+                    }
                 }
                 '''
 
 
                 for k in self.curframe.f_locals:
                     if k.startswith("__"):
+                        continue
+                    print(id(self.curframe.f_locals[k]), k, self.curframe.f_locals[k])
+
+                    id_ = id(self.curframe.f_locals[k])
+
+                    if id_ in localvars:
+                        localvars[id_]['names'].append(k)
                         continue
 
                     val = self.curframe.f_locals[k]
@@ -137,7 +153,7 @@ class StepPyStep(pdb.Pdb):
                     t = val.__class__.__name__
 
                     # if user-defined-class-type
-                    if re.match(r'^__main__\..+$'):
+                    if re.match(r'^__main__\..+$', t):
                         #TODO class outside of main module
                         t = re.findall(r'\.(.+)') #returns Classname from __main__.Classname
                         c = self.curframe.f_locals[k]
@@ -159,7 +175,7 @@ class StepPyStep(pdb.Pdb):
                             v = None
 
 
-                    localvars[k] = {"type": t, "value": v}
+                    localvars[id_] = {"names": [k], "type": t, "value": v}
 
                 ret['localvars'] = localvars
 

@@ -9,7 +9,7 @@ import json
 
 # Create your views here.
 
-SPS_MODEL = StepPyStep()
+SPS_MODEL = None
 
 def index(response, id):
 	return render(response, "main/base.html", {'name':str(id**2)})
@@ -28,19 +28,18 @@ def api(request):
 	
 	command = request.POST['command']
 	args = json.loads(request.POST['args'])
+
+	print(command, args)
 	
 	
 	if command == "start":
 		global SPS_MODEL
-
-		try:
-			SPS_MODEL.request("exit")
-		except Exception:
-			pass
-
 		SPS_MODEL = StepPyStep()
+		print("nekivágok")
+
 		source_code = args['source_code']
 		ret = SPS_MODEL.start(source_code)
+		print("végig értem")
 	
 	elif command == "step":
 		SPS_MODEL.request("step")
