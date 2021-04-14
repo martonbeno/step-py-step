@@ -66,6 +66,7 @@ class StepPyStep(pdb.Pdb):
         
     def cmdloop(self, intro=None):
         import inspect, copy, re
+        from get_frame_data import get_pointers
         
         while True:
 
@@ -99,42 +100,8 @@ class StepPyStep(pdb.Pdb):
 
                 
                 localvars = dict()
-                '''
-                localvars:
-                {
-                    3242847293: #memory address
-                    {
-                        "names":['a', 'b'],
-                        "type": "class",
-                        "value":
-                        {
-                            "class_name":"MyClass",
-                            "variables":
-                            {
-                                43824328:
-                                {
-                                    "names": ["a"],
-                                    "type": "int",
-                                    "value": "4"
-                                },
-                                8473329847:
-                                {
-                                    "names": ["f"],
-                                    "type": "function",
-                                    "value": "def f(): return 42"
-                                }
-                            }
-                        }
-                    }
-                    32427849328:
-                    {
-                        "names":['x'],
-                        "type": "int",
-                        "value": "100"
-                    }
-                }
-                '''
 
+                print("POINTERS:", get_pointers(self.curframe))
 
                 for k in self.curframe.f_locals:
                     if k.startswith("__"):
