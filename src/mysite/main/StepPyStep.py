@@ -65,7 +65,8 @@ class StepPyStep(pdb.Pdb):
         return ret
         
     def cmdloop(self, intro=None):
-        import inspect, copy, re
+        import inspect, copy, re, sys
+        sys.path.insert(1, '/home/beno/Desktop/steppystep/step-py-step/src/mysite/main')
         from get_frame_data import get_pointers
         
         while True:
@@ -96,7 +97,10 @@ class StepPyStep(pdb.Pdb):
 
             elif msg == "get":
 
+
                 ret = dict()
+                ret['localvars'] = get_pointers(self.curframe)
+                '''
 
                 
                 localvars = dict()
@@ -147,7 +151,7 @@ class StepPyStep(pdb.Pdb):
                 ret['localvars'] = localvars
 
 
-                '''
+                
                 for k,v in filter(lambda x:not x[0].startswith("__") and isinstance(x[1], int), self.curframe.f_locals.items()):
                     if k.startswith("__"):
                         continue

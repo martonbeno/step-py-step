@@ -1,5 +1,8 @@
 <html>
 	<head>
+		{% load static %}
+		<link rel="stylesheet" href="{% static 'style.css' %}">
+
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 		<script>
 			var SOURCE_CODE = '';
@@ -26,7 +29,10 @@
 				let args = { 'source_code': source_code };
 				py_api_request('start', args, function(data){
 					SOURCE_CODE = data;
-					document.getElementById('ki').innerHTML = SOURCE_CODE;
+					document.getElementById('ta').style.display = "none";
+					document.getElementById('readcode_button').style.display = "none";
+					let formattedCode = getFormattedCode();
+					document.getElementById('ki').innerHTML = formattedCode;
 				});
 				
 			}
@@ -34,10 +40,9 @@
 			function step(){
 				py_api_request('step', {}, function(data){
 					DATA = JSON.parse(data);
-					let codeMtx = makeCodeMtx();
-					let varMtx = makeVarMtx();
-					document.getElementById('ki').innerHTML = makeTableHTML(codeMtx);
-					document.getElementById('variables').innerHTML = makeTableHTML(varMtx);
+					let formattedCode = getFormattedCode();
+					document.getElementById('ki').innerHTML = formattedCode;
+					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
 				});
 			}
 			
@@ -45,7 +50,25 @@
 				py_api_request('exit', {}, function(data){
 					DATA = JSON.parse(data);
 					console.log("kiléptem");
+					location.reload();
+					return false;
 				});
+			}
+
+			function getFormattedCode(){
+				let lines = SOURCE_CODE.split('\n');
+				let ret = "";
+				for(let i=0; i<lines.length; i++){
+					if(i+1 == DATA['lineno']){
+						ret += "➔ ";
+					}
+					else{
+						ret += "  ";
+					}
+					ret += lines[i];
+					ret += "\n";
+				}
+				return ret;
 			}
 			
 			function makeCodeMtx(){
@@ -58,15 +81,52 @@
 				}
 				return ret;
 			}
-			
-			function makeVarMtx(){
-				ret = [];
-				for(let key in DATA['localvars']){
-					let rec = DATA['localvars'][key];
-					let names = rec['names'].join(', ');
-					ret.push( [ names, rec['type'], rec['value'] ] );
-					//ret.push([ key, DATA['localvars'][key]['type'], DATA['localvars'][key]['value'] ]);
+
+			function makeSmallTable(localvars){
+				let ret = "<table border=1>";
+					ret += "<tr>";
+						ret += "<td>";
+							ret += "kicsi";
+						ret += "</td>";
+						ret += "<td>";
+							ret += "táblázat";
+						ret += "</td>";
+					ret += "</tr>";
+				ret += "</table>";
+				return ret
+			}
+
+			function makeTable(localvars){
+				//TODO ha esetleg html cuccok lennének a táblázat mezőiben, azokat escape-elni valahogy
+
+				let ret = "<table border=1>";
+
+				for(let i=0; i<localvars.length; i++){
+					let v = localvars[i];
+
+					ret += "<tr>";
+					ret += "<td>" + v['name'] + "</td>";
+					if(! v['is_udt']){
+						
+						if(! v['defined_elsewhere']){
+							ret += "<td>" + v['type'] + "</td>";
+							ret += "<td>" + v['value'] + "</td>";
+						}
+						else{
+							ret += "<td></td>";
+							ret += "<td>máshol definiált</td>";
+						}
+
+					}
+
+					else{
+						ret += "<td>" + v['type'] + "</td>";
+						ret += "<td>" + makeTable(v['children']) + "</td>";
+					}
+					ret += "</tr>";
 				}
+
+				ret += "</table>";
 				return ret;
 			}
 			
@@ -89,21 +149,24 @@
 		</script>
 	</head>
 	<body>
-		<form method="post" action="/create/">
-			<!-- {{form.as_p}} -->
-			<textarea id="ta" name="content" rows="15" cols="100"></textarea>
-			<button type="submit" name="save">Create New</button>
-		</form>
-		
-		<button onclick="readcode()">Read code</button><br>
-		<button onclick="step()">Step</button><br>
-		<button onclick="exit_code()">Exit code</button>
-		
-		<pre>
-			<p id="ki"></p>
-		</pre>
-		<br>
-		<p id="variables"></p>
+		<div class="split left">
+			<form method="post" action="/create/">
+				<textarea id="ta" name="content" rows="15" cols="75"></textarea>
+			</form>
+			
+			<pre>
+				<p id="ki"></p>
+			</pre>
+			
+			<button id="readcode_button" onclick="readcode()">Read code</button><br>
+			<button onclick="step()">Step</button><br>
+			<button onclick="exit_code()">Exit code</button>
+		</div>
+		<div class="split right">
+			<pre>
+				<p id="variables"></p>
+			</pre>
+		</div>
 		
 	</body>
 </html>
