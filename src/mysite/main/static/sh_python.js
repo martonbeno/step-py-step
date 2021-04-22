@@ -1,4 +1,3 @@
-console.log("megyez");
 if (! this.sh_languages) {
   this.sh_languages = {};
 }
