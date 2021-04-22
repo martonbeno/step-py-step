@@ -2,8 +2,11 @@
 	<head>
 		{% load static %}
 		<link rel="stylesheet" href="{% static 'style.css' %}">
+		<link rel="stylesheet" href="{% static 'sh_style.css' %}">
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+		<script type="text/javascript" src="{% static 'sh_main.js' %}"></script>
+		<script type="text/javascript" src="{% static 'sh_python.js' %}"></script>
 		<script>
 			var SOURCE_CODE = '';
 			var DATA = {'lineno':1, 'localvars':[]};
@@ -22,6 +25,11 @@
 					//semmi
 				});
 			}
+
+			function testButtonPressed(){
+				console.log("tesztelek");
+				sh_highlightDocument();
+			}
 			
 			function readcode(){
 				let source_code = document.getElementById('ta').value;
@@ -32,6 +40,7 @@
 					document.getElementById('readcode_button').style.display = "none";
 					let formattedCode = getFormattedCode();
 					document.getElementById('ki').innerHTML = formattedCode;
+					sh_highlightDocument();
 				});
 				
 			}
@@ -41,6 +50,7 @@
 					DATA = JSON.parse(data);
 					let formattedCode = getFormattedCode();
 					document.getElementById('ki').innerHTML = formattedCode;
+					sh_highlightDocument();
 					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
 					document.getElementById('outputField').innerHTML = DATA['output'];
 				});
@@ -152,17 +162,18 @@
 	</head>
 	<body>
 		<div class="split left">
-			<form method="post" action="/create/">
-				<textarea id="ta" name="content" rows="15" cols="75"></textarea>
-			</form>
+			<!--<form method="post" action="/create/">-->
+			<textarea id="ta" name="content" rows="15" cols="75"></textarea>
+			<!--</form>-->
 			
-			<pre>
+			<pre class="sh_python">
 				<p id="ki"></p>
 			</pre>
 			
 			<button id="readcode_button" onclick="readcode()">Read code</button><br>
 			<button onclick="step()">Step</button><br>
 			<button onclick="exit_code()">Exit code</button>
+			<button onclick="testButtonPressed()">Teszt</button>
 			<pre>
 				<p>---Output---</p>
 				<p id="outputField"></p>
