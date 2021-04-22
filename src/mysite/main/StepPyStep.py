@@ -2,16 +2,9 @@ import pdb
 import copy
 import multiprocessing
 import re
+import sys
 
-def get_methods(user_defined_class):
-    ret = []
-    for m in dir(user_defined_class):
-        if m.startswith("__"):
-            continue
-        a = getattr(user_defined_class, m)
-        if callable(a):
-            ret.append(a)
-    return ret
+
 
 class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
@@ -22,12 +15,9 @@ class StepPyStep(pdb.Pdb):
         
         path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
         self.filename = path + "tmp.py"
-        '''
-        self.source_code = kwargs['source_code']
-        self.create_file(self.source_code)
 
-        del kwargs['source_code']
-        '''
+        #kwargs['stdout'] = open("kifele.txt", 'a')
+
         super().__init__(**kwargs)
         
         # self._runscript(self.filename)
@@ -42,6 +32,7 @@ class StepPyStep(pdb.Pdb):
         self.create_file(source_code)
         self.p = multiprocessing.Process(target=self.rs, args=())
         self.p.start()
+        self.request("init")
         return source_code
 
     def create_file(self, source_code):
@@ -68,6 +59,8 @@ class StepPyStep(pdb.Pdb):
         import inspect, copy, re, sys
         sys.path.insert(1, '/home/beno/Desktop/steppystep/step-py-step/src/mysite/main')
         from get_frame_data import get_pointers
+        def debug(*args):
+            sys.stdout.write(' '.join(str(x) for x in args) + '\n')
         
         while True:
 
@@ -78,16 +71,33 @@ class StepPyStep(pdb.Pdb):
                 self.onecmd("exit")
                 self.answer_q.put("exit")
                 return
+
+            elif msg == "init":
+                self.onecmd("ORIGINAL_PRINT=print")
+                self.onecmd("!STEP_PY_STEP_OUTPUT=''")
+                self.onecmd("!def STEP_PY_STEP_PRINT(*args, sep=' ', end='\\n', file=None, flush=False):global STEP_PY_STEP_OUTPUT;STEP_PY_STEP_OUTPUT+=sep.join([str(x) for x in args])+end;ORIGINAL_PRINT(*args, sep, end, file, flush)")
+                self.onecmd("!print=STEP_PY_STEP_PRINT")
+                self.answer_q.put("init")
+
             
             elif msg == "step":
                 self.onecmd("step")
+                '''
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
-                self.answer_q.put(lineno)
+
+                debug("lineno", lineno)
+                debug("function", function)
+                debug("filename_with_path", filename_with_path)
+                debug("code_context", code_context)
+                debug("index", index)
+                '''
+
+                self.request_q.put("get")
                 break
 
             elif msg == "x":
                 self.onecmd("!x=999;y=888")
-                filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
+                filename_with_path, lineno, function, copyde_context, index = inspect.getframeinfo(self.curframe)
                 self.answer_q.put(f"xelek{lineno}")
                 return
                 line = "!_localvars=[(k, v) for k,v in locals().items() if not k.startswith('_') and isinstance(v,int)]"
@@ -96,80 +106,36 @@ class StepPyStep(pdb.Pdb):
                 print("xxxxx", self.curframe.f_locals)
 
             elif msg == "get":
-
-
                 ret = dict()
                 ret['localvars'] = get_pointers(self.curframe)
-                '''
+                for v in ret['localvars']:
+                    if v['name'] == 'STEP_PY_STEP_OUTPUT':
+                        step_py_step_output = v
+                        break
 
-                
-                localvars = dict()
-
-                print("POINTERS:", get_pointers(self.curframe))
-
-                for k in self.curframe.f_locals:
-                    if k.startswith("__"):
-                        continue
-                    print(id(self.curframe.f_locals[k]), k, self.curframe.f_locals[k])
-
-                    id_ = id(self.curframe.f_locals[k])
-
-                    if id_ in localvars:
-                        localvars[id_]['names'].append(k)
-                        continue
-
-                    val = self.curframe.f_locals[k]
-                    typ = type(val)
-                    t = re.findall(r"'.+'", str(typ))[0][1:-1] #returns the substring between apostrophes in <class 'str'>
-                    t = val.__class__.__name__
-
-                    # if user-defined-class-type
-                    if re.match(r'^__main__\..+$', t):
-                        #TODO class outside of main module
-                        t = re.findall(r'\.(.+)') #returns Classname from __main__.Classname
-                        c = self.curframe.f_locals[k]
-                        v = inspect.getsource()
-
-                    elif t == "function":
-                        f = self.curframe.f_locals[k] # the function itself
-                        v = inspect.getsource(f) #the source code of the function
-                    else:
-                        val = self.curframe.f_locals[k]
-                        typ = type(val)
-                        is_builtin = typ.__class__.__module__ == 'builtins'
-
-                        if is_builtin:
-                            t = re.findall(r"'.+'", str(typ))[0][1:-1] #returns the substring between apostrophes in <class 'str'>
-                            v = str(val)
-                        else:
-                            t = None
-                            v = None
-
-
-                    localvars[id_] = {"names": [k], "type": t, "value": v}
-
-                ret['localvars'] = localvars
-
-
-                
-                for k,v in filter(lambda x:not x[0].startswith("__") and isinstance(x[1], int), self.curframe.f_locals.items()):
-                    if k.startswith("__"):
-                        continue
-                    ret['localvars'][k] = v
-                '''
-
+                ret['output'] = step_py_step_output['value']
+                ret['localvars'].remove(v)
 
 
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
                 ret['lineno'] = lineno
-                self.answer_q.put(ret)
+
+                #debug("getteleme a retet", ret)
+                
+                if function in ["STEP_PY_STEP_OUTPUT", "STEP_PY_STEP_PRINT"] or filename_with_path == "<stdin>":
+                    self.request_q.put("step")
+                else:
+                    self.answer_q.put(ret)
+            
             
             else:
+                print("elírtad")
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
                 self.answer_q.put(lineno)
 
         
 if __name__ == "__main__":
+    import time
     filename = "ja2.py"
     filename = "ja.py"
 
@@ -183,6 +149,7 @@ if __name__ == "__main__":
         if r == "quit":
             p.kill()
             break
+        #time.sleep(1)
         ret = p.request(r)
         print("------RET", ret)
         if ret == "exit":

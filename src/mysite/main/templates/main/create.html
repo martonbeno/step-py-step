@@ -8,7 +8,6 @@
 			var SOURCE_CODE = '';
 			var DATA = {'lineno':1, 'localvars':[]};
 			
-			
 			function py_api_request(command, args, callback){
 				$.ajax({
 					url: '/api/',
@@ -43,6 +42,7 @@
 					let formattedCode = getFormattedCode();
 					document.getElementById('ki').innerHTML = formattedCode;
 					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
+					document.getElementById('outputField').innerHTML = DATA['output'];
 				});
 			}
 			
@@ -103,8 +103,10 @@
 
 				for(let i=0; i<localvars.length; i++){
 					let v = localvars[i];
+					let backgroundColor = v['is_local'] ? '#FFFFFF' : '#888888';
 
-					ret += "<tr>";
+					ret += '<tr style="background-color:' + backgroundColor + '">';
+					//ret += '<tr>';
 					ret += "<td>" + v['name'] + "</td>";
 					if(! v['is_udt']){
 						
@@ -161,6 +163,10 @@
 			<button id="readcode_button" onclick="readcode()">Read code</button><br>
 			<button onclick="step()">Step</button><br>
 			<button onclick="exit_code()">Exit code</button>
+			<pre>
+				<p>---Output---</p>
+				<p id="outputField"></p>
+			</pre>
 		</div>
 		<div class="split right">
 			<pre>
