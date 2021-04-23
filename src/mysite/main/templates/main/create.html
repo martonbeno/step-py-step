@@ -10,6 +10,8 @@
 		<script>
 			var SOURCE_CODE = '';
 			var DATA = {'lineno':1, 'localvars':[]};
+			var ROWS = {}; //key: pointer, value: element
+			var ONLY_GLOBAL_POINTERS = [];
 			
 			function py_api_request(command, args, callback){
 				$.ajax({
@@ -27,8 +29,8 @@
 			}
 
 			function testButtonPressed(){
-				let args = { 'example_code_id': 2 };
-				startAnalysis(args);
+				console.log(getPointerMap(DATA['localvars']));
+				addRowFunctions(DATA['localvars']);
 			}
 
 			function exampleCode(example_code_id){
@@ -131,8 +133,13 @@
 				for(let i=0; i<localvars.length; i++){
 					let v = localvars[i];
 					let backgroundColor = v['is_local'] ? '#FFFFFF' : '#888888';
+					if(v['is_global'] && !v['is_local']){
+						ONLY_GLOBAL_POINTERS.push(v['pointer']);
+					}
 
-					ret += '<tr style="background-color:' + backgroundColor + '">';
+					ret += '<tr ';
+					ret += 'class="pointer_' + v['pointer'] + '" ';
+					ret += 'style="background-color:' + backgroundColor + '">';
 					//ret += '<tr>';
 					ret += "<td>" + v['name'] + "</td>";
 					if(! v['is_udt']){
@@ -158,6 +165,56 @@
 				ret += "</table>";
 				return ret;
 			}
+
+			function getPointerMap(localvars, start=true){
+				let ret = {};
+				if(start){
+					for(let i=0; i<localvars.length; i++){
+						let v = localvars[i];
+						ret = Object.assign({}, ret, getPointerMap(v, false));
+					}
+					return ret;
+				} else {
+					let pointer = localvars['pointer'];
+					ret[pointer] = document.getElementsByClassName("pointer_" + pointer);
+					for(let i=0; i<localvars['children'].length; i++){
+						let v = localvars['children'][i];
+						ret = Object.assign({}, ret, getPointerMap(v, false));
+					}
+				}
+				return ret;
+			}
+
+			function addRowFunctions(localvars){
+				let pointerMap = getPointerMap(localvars);
+				for(var pointer in pointerMap){
+					let objArr = pointerMap[pointer];
+					let className = "pointer_" + pointer;
+
+					for(let i=0; i<objArr.length; i++){
+
+						function mouseEnter(event){
+							console.log("rajta vagyok");
+							let elementsToHighlight = document.getElementsByClassName(className);
+							for(let j=0; j<elementsToHighlight.length; j++){
+								if(objArr[i] == elementsToHighlight[j])
+									continue;
+								elementsToHighlight[j].style.backgroundColor = "#FFFF00";
+							}
+						}
+
+						//TODO eredeti színre visszaállítani
+						function mouseLeave(event){
+							let elementsToHighlight = document.getElementsByClassName(className);
+							for(let j=0; j<elementsToHighlight.length; j++){
+								elementsToHighlight[j].style.backgroundColor = "#FFFFFF";
+							}
+						}
+						objArr[i].addEventListener("mouseover", mouseEnter);
+						objArr[i].addEventListener("mouseleave", mouseLeave);
+					}
+				}
+			}
 			
 			
 			//stackoverflow
@@ -174,6 +231,8 @@
 
 				return result;
 			}
+
+
 
 		</script>
 	</head>
@@ -200,10 +259,29 @@
 			</pre>
 		</div>
 		<div class="split right">
+		<table border=1>
+			<tr id="fent">
+				<td>egy</td>
+				<td>ketto</td>
+			</tr>
+			<tr id="lent">
+				<td>három</td>
+				<td>négy</td>
+			</tr>
+		</table>
 			<pre>
 				<p id="variables"></p>
 			</pre>
 		</div>
 		
+		<script>
+			var fent = document.getElementById("fent");
+			var lent = document.getElementById("lent");
+			fent.addEventListener("mouseenter", function(event){
+				console.log("bentvagy");
+				console.log(event);
+				lent.style.backgroundColor = "#FF0000";
+			});
+		</script>
 	</body>
 </html>
