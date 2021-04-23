@@ -27,22 +27,39 @@
 			}
 
 			function testButtonPressed(){
-				console.log("tesztelek");
-				sh_highlightDocument();
+				let args = { 'example_code_id': 2 };
+				startAnalysis(args);
+			}
+
+			function exampleCode(example_code_id){
+				let args = { 'example_code_id': example_code_id };
+				startAnalysis(args);
 			}
 			
 			function readcode(){
 				let source_code = document.getElementById('ta').value;
+
 				let args = { 'source_code': source_code };
+				startAnalysis(args);
+			}
+
+			function startAnalysis(args){
 				py_api_request('start', args, function(data){
 					SOURCE_CODE = data;
-					document.getElementById('ta').style.display = "none";
-					document.getElementById('readcode_button').style.display = "none";
+					//document.getElementById('ta').style.display = "none";
+					//document.getElementById('readcode_button').style.display = "none";
+
+					let objectsToHide = document.getElementsByClassName("preAnalysis");
+					for(let i=0; i<objectsToHide.length; i++)
+						objectsToHide[i].style.display = "none";
+					let objectsToShow = document.getElementsByClassName("duringAnalysis");
+					for(let i=0; i<objectsToShow.length; i++)
+						objectsToShow[i].style.display = "block";
+
 					let formattedCode = getFormattedCode();
 					document.getElementById('ki').innerHTML = formattedCode;
 					sh_highlightDocument();
 				});
-				
 			}
 			
 			function step(){
@@ -162,16 +179,20 @@
 	</head>
 	<body>
 		<div class="split left">
-			<textarea id="ta" name="content" rows="15" cols="75"></textarea>
+			<textarea id="ta" name="content" class="preAnalysis" rows="15" cols="75"></textarea>
 			<script type="text/javascript" src="{% static 'allowtabs.js' %}"></script>
 			
 			<pre class="sh_python">
 				<p id="ki"></p>
 			</pre>
 			
-			<button id="readcode_button" onclick="readcode()">Read code</button><br>
-			<button onclick="step()">Step</button><br>
-			<button onclick="exit_code()">Exit code</button>
+			<button class="preAnalysis" onclick="readcode()">Read code</button> 
+			<button class="preAnalysis" onclick="exampleCode(1)">Example 1</button> 
+			<button class="preAnalysis" onclick="exampleCode(2)">Example 2</button> 
+			<button class="preAnalysis" onclick="exampleCode(3)">Example 3</button>
+			<br>
+			<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>
+			<button class="duringAnalysis" onclick="exit_code()" style="display:none;">Exit code</button><br>
 			<button onclick="testButtonPressed()">Teszt</button>
 			<pre>
 				<p>---Output---</p>

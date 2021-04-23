@@ -35,11 +35,8 @@ def api(request):
 	if command == "start":
 		global SPS_MODEL
 		SPS_MODEL = StepPyStep()
-		print("nekivágok")
 
-		source_code = args['source_code']
-		ret = SPS_MODEL.start(source_code)
-		print("végig értem")
+		ret = SPS_MODEL.start(**args)
 	
 	elif command == "step":
 		SPS_MODEL.request("step")

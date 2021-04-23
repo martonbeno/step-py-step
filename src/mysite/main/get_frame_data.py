@@ -18,7 +18,7 @@ class Var:
 	def get_dict(self):
 		assert self.is_processed
 		ret = dict()
-		if self.type == "Class" and not self.is_udt:
+		if not self.defined_elsewhere and self.type == "Class" and not self.is_udt:
 			return ret
 
 		ret['name'] = self.name
@@ -69,8 +69,8 @@ class Var:
 				self.is_udt = False
 			if inspect.ismodule(self.type):
 				self.is_udt = False
-			if inspect.getmodule(self.data) is not None: #probably this is enough
-				self.is_udt = False
+			#if inspect.getmodule(self.data) is not None: #probably this is enough
+			#	self.is_udt = False
 
 			if self.is_udt:
 				try:
@@ -93,7 +93,8 @@ def set_scope(node, is_local=None, is_global=None, pointer=None):
 		if is_global is not None:
 			node['is_global'] = is_global
 	for child in node['children']:
-		ret = ret or apply_to_tree(child, f)
+		#ret = ret or apply_to_tree(child, f)
+		ret = ret or set_scope(child, is_local, is_global, pointer)
 	return ret
 
 def get_all_pointers(node):

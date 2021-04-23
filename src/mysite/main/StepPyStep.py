@@ -3,6 +3,7 @@ import copy
 import multiprocessing
 import re
 import sys
+import shutil
 
 
 
@@ -22,18 +23,28 @@ class StepPyStep(pdb.Pdb):
         
         # self._runscript(self.filename)
     
-    def start(self, source_code=None):
-        print("startoljunk el")
-        if source_code is None:
+    def start(self, source_code=None, example_code_id=None):
+        if source_code is None and example_code_id is None:
             with open(self.filename, 'r', encoding='utf-8') as f:
                 source_code = f.read()
 
-        print("uccu neki")
-        self.create_file(source_code)
+        elif source_code is not None:
+            self.create_file(source_code)
+
+        elif example_code_id is not None:
+            self.prepare_example(example_code_id)
+            path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
+            with open(f"{path}tmp.py", 'r') as f:
+                source_code = f.read()
+
         self.p = multiprocessing.Process(target=self.rs, args=())
         self.p.start()
         self.request("init")
         return source_code
+
+    def prepare_example(self, example_code_id):
+        path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
+        shutil.copyfile(f"{path}example{example_code_id}.py", f"{path}tmp.py")
 
     def create_file(self, source_code):
         with open(self.filename, 'w+', encoding='utf-8') as f:
