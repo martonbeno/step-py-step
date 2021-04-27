@@ -42,7 +42,11 @@ def api(request):
 		SPS_MODEL.request("step")
 		ret = SPS_MODEL.request("get")
 		ret = json.dumps(ret)
-		#print(ret)
+
+	elif command == "next":
+		SPS_MODEL.request("next")
+		ret = SPS_MODEL.request("get")
+		ret = json.dumps(ret)
 
 	elif command == "exit":
 		SPS_MODEL.request("exit")

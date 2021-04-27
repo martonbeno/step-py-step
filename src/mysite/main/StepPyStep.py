@@ -93,16 +93,11 @@ class StepPyStep(pdb.Pdb):
             
             elif msg == "step":
                 self.onecmd("step")
-                '''
-                filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
+                self.request_q.put("get")
+                break
 
-                debug("lineno", lineno)
-                debug("function", function)
-                debug("filename_with_path", filename_with_path)
-                debug("code_context", code_context)
-                debug("index", index)
-                '''
-
+            elif msg == "next":
+                self.onecmd("next")
                 self.request_q.put("get")
                 break
 

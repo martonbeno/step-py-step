@@ -75,6 +75,17 @@
 				});
 			}
 			
+			function next(){
+				py_api_request('next', {}, function(data){
+					DATA = JSON.parse(data);
+					let formattedCode = getFormattedCode();
+					document.getElementById('ki').innerHTML = formattedCode;
+					sh_highlightDocument();
+					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
+					document.getElementById('outputField').innerHTML = DATA['output'];
+				});
+			}
+			
 			function exit_code(){
 				py_api_request('exit', {}, function(data){
 					DATA = JSON.parse(data);
@@ -109,20 +120,6 @@
 					ret.push([maybeArrow, lines[i]]);
 				}
 				return ret;
-			}
-
-			function makeSmallTable(localvars){
-				let ret = "<table border=1>";
-					ret += "<tr>";
-						ret += "<td>";
-							ret += "kicsi";
-						ret += "</td>";
-						ret += "<td>";
-							ret += "táblázat";
-						ret += "</td>";
-					ret += "</tr>";
-				ret += "</table>";
-				return ret
 			}
 
 			function makeTable(localvars){
@@ -215,22 +212,6 @@
 					}
 				}
 			}
-			
-			
-			//stackoverflow
-			function makeTableHTML(myArray) {
-				var result = "<table border=1>";
-				for(var i=0; i<myArray.length; i++) {
-					result += "<tr>";
-					for(var j=0; j<myArray[i].length; j++){
-						result += "<td>"+myArray[i][j]+"</td>";
-					}
-					result += "</tr>";
-				}
-				result += "</table>";
-
-				return result;
-			}
 
 
 
@@ -251,6 +232,7 @@
 			<button class="preAnalysis" onclick="exampleCode(3)">Example 3</button>
 			<br>
 			<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>
+			<button class="duringAnalysis" onclick="next()" style="display:none;">Next</button><br>
 			<button class="duringAnalysis" onclick="exit_code()" style="display:none;">Exit code</button><br>
 			<button onclick="testButtonPressed()">Teszt</button>
 			<pre>
@@ -259,16 +241,6 @@
 			</pre>
 		</div>
 		<div class="split right">
-		<table border=1>
-			<tr id="fent">
-				<td>egy</td>
-				<td>ketto</td>
-			</tr>
-			<tr id="lent">
-				<td>három</td>
-				<td>négy</td>
-			</tr>
-		</table>
 			<pre>
 				<p id="variables"></p>
 			</pre>
