@@ -3,10 +3,13 @@
 		{% load static %}
 		<link rel="stylesheet" href="{% static 'style.css' %}">
 		<link rel="stylesheet" href="{% static 'sh_style.css' %}">
+		<link rel="stylesheet" href="{% static 'Treant.css' %}">
+		<!--<link rel="stylesheet" href="{% static 'super-simple.css' %}">-->
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 		<script type="text/javascript" src="{% static 'sh_main.js' %}"></script>
 		<script type="text/javascript" src="{% static 'sh_python.js' %}"></script>
+
 		<script>
 			var SOURCE_CODE = '';
 			var DATA = {'lineno':1, 'localvars':[]};
@@ -30,8 +33,13 @@
 			}
 
 			function testButtonPressed(){
-				console.log(getPointerMap(DATA['localvars']));
-				addRowFunctions(DATA['localvars']);
+				let nodeStructure = DATA['expr']['treant'];
+				nodeStructure = JSON.stringify(nodeStructure);
+				console.log(nodeStructure);
+				nodeStructure = encodeURIComponent(nodeStructure);
+				//createTreant(nodeStructure);
+
+				window.open("../tree?nodeStructure=" + nodeStructure, "Tree", "height=600,width=800");
 			}
 
 			function exampleCode(example_code_id){
@@ -48,18 +56,26 @@
 
 			function startAnalysis(args){
 				py_api_request('start', args, function(data){
-					SOURCE_CODE = data;
+					data = JSON.parse(data);
 
-					let objectsToHide = document.getElementsByClassName("preAnalysis");
-					for(let i=0; i<objectsToHide.length; i++)
-						objectsToHide[i].style.display = "none";
-					let objectsToShow = document.getElementsByClassName("duringAnalysis");
-					for(let i=0; i<objectsToShow.length; i++)
-						objectsToShow[i].style.display = "block";
+					console.log(data);
+					if(data['compile_success']){
+						SOURCE_CODE = data['source_code'];
 
-					let formattedCode = getFormattedCode();
-					document.getElementById('ki').innerHTML = formattedCode;
-					sh_highlightDocument();
+						let objectsToHide = document.getElementsByClassName("preAnalysis");
+						for(let i=0; i<objectsToHide.length; i++)
+							objectsToHide[i].style.display = "none";
+						let objectsToShow = document.getElementsByClassName("duringAnalysis");
+						for(let i=0; i<objectsToShow.length; i++)
+							objectsToShow[i].style.display = "block";
+
+						let formattedCode = getFormattedCode();
+						document.getElementById('ki').innerHTML = formattedCode;
+						sh_highlightDocument();
+					}
+					else{
+						document.getElementById('outputField').innerHTML = data['error_message'];
+					}
 				});
 			}
 			
@@ -71,7 +87,6 @@
 				}
 
 				else{
-
 					py_api_request('step', {}, function(data){
 						setData(data);
 					});
@@ -90,6 +105,13 @@
 			function analyzeExpression(){
 				EXPRESSION_ANALYSIS_IT = 0;
 				setData(null);
+			}
+
+			function openTreant(){
+				let nodeStructure = DATA['expr']['treant'];
+				nodeStructure = JSON.stringify(nodeStructure);
+				nodeStructure = encodeURIComponent(nodeStructure);
+				window.open("../tree?nodeStructure=" + nodeStructure, "Tree", "height=600,width=800");
 			}
 			
 			function exit_code(){
@@ -112,7 +134,9 @@
 
 
 				let expressionAnalysisButton = document.getElementById('expressionAnalysisButton');
+				let openTreantButton = document.getElementById('treantButton');
 				let expressionAnalysisField = document.getElementById('expressionAnalysisField');
+				let treantArea = document.getElementById('treantArea');
 				//ha el lehet indítani az expression anaylsis-t, de még nem indítottuk el
 				if(DATA['expr'] !== null && EXPRESSION_ANALYSIS_IT === null){
 					expressionAnalysisButton.style.display = "block";
@@ -122,9 +146,9 @@
 				else if(EXPRESSION_ANALYSIS_IT !== null &&
 					DATA['expr'] !== null &&
 					EXPRESSION_ANALYSIS_IT < DATA['expr']['sequence'].length){
-					console.log("középső");
 					expressionAnalysisButton.style.display = "none";
 					expressionAnalysisField.style.display = "block";
+					openTreantButton.style.display = "block";
 
 					expressionAnalysisField.innerHTML = DATA['expr']['sequence'][EXPRESSION_ANALYSIS_IT];
 				}
@@ -133,6 +157,7 @@
 				else{
 					expressionAnalysisButton.style.display = "none";
 					expressionAnalysisField.style.display = "none";
+					openTreantButton.style.display = "none";
 					EXPRESSION_ANALYSIS_IT = null;
 				}
 			}
@@ -276,6 +301,7 @@
 			<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>
 			<button class="duringAnalysis" onclick="next()" style="display:none;">Next</button><br>
 			<button id="expressionAnalysisButton" onclick="analyzeExpression()" style="display:none;">Analyize Expression</button><br>
+			<button id="treantButton" onclick="openTreant()" style="display:none;">Abstract Syntax Tree</button><br>
 			<button class="duringAnalysis" onclick="exit_code()" style="display:none;">Exit code</button><br>
 			<button onclick="testButtonPressed()">Teszt</button>
 			<pre>
@@ -289,16 +315,5 @@
 				<p id="variables"></p>
 			</pre>
 		</div>
-		<!--
-		<script>
-			var fent = document.getElementById("fent");
-			var lent = document.getElementById("lent");
-			fent.addEventListener("mouseenter", function(event){
-				console.log("bentvagy");
-				console.log(event);
-				lent.style.backgroundColor = "#FF0000";
-			});
-		</script>
-		-->
 	</body>
 </html>

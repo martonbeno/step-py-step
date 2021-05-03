@@ -4,6 +4,8 @@ import multiprocessing
 import re
 import sys
 import shutil
+import traceback
+import ast
 
 try:
     from .expression_analysis import get_exprs
@@ -11,6 +13,10 @@ except ImportError:
     from expression_analysis import get_exprs
 
 
+class UserCompileError(Exception):
+    pass
+class UserRuntimeError(Exception):
+    pass
 
 class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
@@ -41,18 +47,37 @@ class StepPyStep(pdb.Pdb):
             path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
             with open(f"{path}tmp.py", 'r') as f:
                 source_code = f.read()
+        
+        
+        ret = { "compile_success": None,
+                "error_message": None,
+                "source_code": None }
 
+        try:
+            ast.parse(source_code)
+            ret['compile_success'] = True
+        except Exception:
+            error_message = traceback.format_exc()
+            error_message = error_message.split('"<unknown>", ')[-1]
+            #error_message = "HIBA" + error_message
+            #error_message += "????????????????????"
+            #print("okokoko", error_message)
+            ret['compile_success'] = False
+            ret['error_message'] = error_message
+            return ret
+        
         self.expression_at_line = dict()
         expressions = get_exprs(source_code)
         for e in expressions:
             self.expression_at_line[e.lineno] = e
         
         self.source_code = source_code
+        ret['source_code'] = source_code
 
         self.p = multiprocessing.Process(target=self.rs, args=())
         self.p.start()
         self.request("init")
-        return source_code
+        return ret
 
     def prepare_example(self, example_code_id):
         path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
@@ -169,7 +194,13 @@ if __name__ == "__main__":
 
     #p = StepPyStep(filename=filename)
     p = StepPyStep()
-    p.start()
+    init_msg = p.start()
+    if not init_msg['compile_success']:
+        print("fordítási idejű hiba")
+        print(init_msg['error_message'])
+        exit()
+
+    print(init_msg)
 
     while True:
         print("várom a parancsokat")

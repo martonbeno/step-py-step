@@ -19,13 +19,19 @@ def home(response):
 	return render(response, "main/home.html", {'name':'teszt'})
 	# return HttpResponse("<h1>view1</h1>")
 
+def tree(request):
+	try:
+		nodeStructure = request.GET['nodeStructure']
+	except KeyError:
+		nodeStructure = "HIBA"
+	
+	return render(request, "main/tree.html", {'nodeStructure':nodeStructure})
+
 def create(response):
 	form = CreateNewList()
 	return render(response, "main/create.html", {'form':form})
 
 def api(request):
-
-	
 	command = request.POST['command']
 	args = json.loads(request.POST['args'])
 
@@ -35,22 +41,20 @@ def api(request):
 	if command == "start":
 		global SPS_MODEL
 		SPS_MODEL = StepPyStep()
-
 		ret = SPS_MODEL.start(**args)
 	
 	elif command == "step":
 		SPS_MODEL.request("step")
 		ret = SPS_MODEL.request("get")
-		ret = json.dumps(ret)
 
 	elif command == "next":
 		SPS_MODEL.request("next")
 		ret = SPS_MODEL.request("get")
-		ret = json.dumps(ret)
 
 	elif command == "exit":
 		SPS_MODEL.request("exit")
-		ret = json.dumps({'exit':'yes'})
+		ret = {'exit':'yes'}
 	
-	
-	return HttpResponse(f"{ret}")
+	ret = json.dumps(ret)
+	print(ret)
+	return HttpResponse(ret)

@@ -1,0 +1,39 @@
+<html>
+	<head>
+		{% load static %}
+		<link rel="stylesheet" href="{% static 'Treant.css' %}">
+		<script type="text/javascript" src="{% static 'Treant.js' %}"></script>
+		<script type="text/javascript" src="{% static 'raphael.js' %}"></script>
+	</head>
+	<pre hidden id="debugField"></pre>
+	<!--<div id="treantArea" style="width:335px; height: 160px"></div>-->
+	<div id="treantArea" style="width:600px; height: 800px"></div>
+			<script>
+			function createTreant(nodeStructure){
+				document.getElementById("treantArea").innerHTML = "";
+
+				simple_chart_config = {
+				    chart: {
+				        container: "#treantArea"
+				    },
+				    
+				    nodeStructure: nodeStructure
+				};
+				new Treant(simple_chart_config);
+			}
+		</script>
+		<script>
+			var nodeStructure = '{{nodeStructure}}';
+			var nodeStructureDecoded = decodeURIComponent(nodeStructure);
+			var debugField = document.getElementById("debugField");
+			debugField.innerHTML = nodeStructureDecoded;
+
+			var nodeStructureArray = JSON.parse(debugField.innerHTML);
+			createTreant(nodeStructureArray);
+		</script>
+			<div class="chart" id="OrganiseChart-simple">
+		</div>
+		
+
+		<!--<script type="text/javascript" src="{% static 'fa.js' %}"></script>-->
+</html>
