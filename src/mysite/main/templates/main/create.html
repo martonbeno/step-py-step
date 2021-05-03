@@ -12,6 +12,7 @@
 			var DATA = {'lineno':1, 'localvars':[]};
 			var ROWS = {}; //key: pointer, value: element
 			var ONLY_GLOBAL_POINTERS = [];
+			var EXPRESSION_ANALYSIS_IT = null;
 			
 			function py_api_request(command, args, callback){
 				$.ajax({
@@ -48,8 +49,6 @@
 			function startAnalysis(args){
 				py_api_request('start', args, function(data){
 					SOURCE_CODE = data;
-					//document.getElementById('ta').style.display = "none";
-					//document.getElementById('readcode_button').style.display = "none";
 
 					let objectsToHide = document.getElementsByClassName("preAnalysis");
 					for(let i=0; i<objectsToHide.length; i++)
@@ -65,25 +64,32 @@
 			}
 			
 			function step(){
-				py_api_request('step', {}, function(data){
-					DATA = JSON.parse(data);
-					let formattedCode = getFormattedCode();
-					document.getElementById('ki').innerHTML = formattedCode;
-					sh_highlightDocument();
-					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
-					document.getElementById('outputField').innerHTML = DATA['output'];
-				});
+				if(EXPRESSION_ANALYSIS_IT !== null){
+					console.log("steppeljünk");
+					EXPRESSION_ANALYSIS_IT ++;
+					setData(null);
+				}
+
+				else{
+
+					py_api_request('step', {}, function(data){
+						setData(data);
+					});
+				}
 			}
 			
 			function next(){
+				if(EXPRESSION_ANALYSIS_IT !== null)
+					EXPRESSION_ANALYSIS_IT = DATA['expr']['sequence'].length;
+
 				py_api_request('next', {}, function(data){
-					DATA = JSON.parse(data);
-					let formattedCode = getFormattedCode();
-					document.getElementById('ki').innerHTML = formattedCode;
-					sh_highlightDocument();
-					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
-					document.getElementById('outputField').innerHTML = DATA['output'];
+					setData(data);
 				});
+			}
+			
+			function analyzeExpression(){
+				EXPRESSION_ANALYSIS_IT = 0;
+				setData(null);
 			}
 			
 			function exit_code(){
@@ -93,6 +99,42 @@
 					location.reload();
 					return false;
 				});
+			}
+
+			function setData(data){
+				if(data !== null)
+					DATA = JSON.parse(data);
+				let formattedCode = getFormattedCode();
+				document.getElementById('ki').innerHTML = formattedCode;
+				sh_highlightDocument();
+				document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
+				document.getElementById('outputField').innerHTML = DATA['output'];
+
+
+				let expressionAnalysisButton = document.getElementById('expressionAnalysisButton');
+				let expressionAnalysisField = document.getElementById('expressionAnalysisField');
+				//ha el lehet indítani az expression anaylsis-t, de még nem indítottuk el
+				if(DATA['expr'] !== null && EXPRESSION_ANALYSIS_IT === null){
+					expressionAnalysisButton.style.display = "block";
+				}
+
+				//ha már megy
+				else if(EXPRESSION_ANALYSIS_IT !== null &&
+					DATA['expr'] !== null &&
+					EXPRESSION_ANALYSIS_IT < DATA['expr']['sequence'].length){
+					console.log("középső");
+					expressionAnalysisButton.style.display = "none";
+					expressionAnalysisField.style.display = "block";
+
+					expressionAnalysisField.innerHTML = DATA['expr']['sequence'][EXPRESSION_ANALYSIS_IT];
+				}
+
+				//ha nincs expression analysis
+				else{
+					expressionAnalysisButton.style.display = "none";
+					expressionAnalysisField.style.display = "none";
+					EXPRESSION_ANALYSIS_IT = null;
+				}
 			}
 
 			function getFormattedCode(){
@@ -233,6 +275,7 @@
 			<br>
 			<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>
 			<button class="duringAnalysis" onclick="next()" style="display:none;">Next</button><br>
+			<button id="expressionAnalysisButton" onclick="analyzeExpression()" style="display:none;">Analyize Expression</button><br>
 			<button class="duringAnalysis" onclick="exit_code()" style="display:none;">Exit code</button><br>
 			<button onclick="testButtonPressed()">Teszt</button>
 			<pre>
@@ -242,10 +285,11 @@
 		</div>
 		<div class="split right">
 			<pre>
+				<p id="expressionAnalysisField"></p>
 				<p id="variables"></p>
 			</pre>
 		</div>
-		
+		<!--
 		<script>
 			var fent = document.getElementById("fent");
 			var lent = document.getElementById("lent");
@@ -255,5 +299,6 @@
 				lent.style.backgroundColor = "#FF0000";
 			});
 		</script>
+		-->
 	</body>
 </html>

@@ -5,6 +5,11 @@ import re
 import sys
 import shutil
 
+try:
+    from .expression_analysis import get_exprs
+except ImportError:
+    from expression_analysis import get_exprs
+
 
 
 class StepPyStep(pdb.Pdb):
@@ -36,6 +41,13 @@ class StepPyStep(pdb.Pdb):
             path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
             with open(f"{path}tmp.py", 'r') as f:
                 source_code = f.read()
+
+        self.expression_at_line = dict()
+        expressions = get_exprs(source_code)
+        for e in expressions:
+            self.expression_at_line[e.lineno] = e
+        
+        self.source_code = source_code
 
         self.p = multiprocessing.Process(target=self.rs, args=())
         self.p.start()
@@ -70,6 +82,7 @@ class StepPyStep(pdb.Pdb):
         import inspect, copy, re, sys
         sys.path.insert(1, '/home/beno/Desktop/steppystep/step-py-step/src/mysite/main')
         from get_frame_data import get_pointers
+        from expression_analysis import node2seq, to_treant
         def debug(*args):
             sys.stdout.write(' '.join(str(x) for x in args) + '\n')
         
@@ -112,6 +125,7 @@ class StepPyStep(pdb.Pdb):
                 print("xxxxx", self.curframe.f_locals)
 
             elif msg == "get":
+
                 ret = dict()
                 ret['localvars'] = get_pointers(self.curframe)
                 for v in ret['localvars']:
@@ -125,13 +139,48 @@ class StepPyStep(pdb.Pdb):
 
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
                 ret['lineno'] = lineno
-
-                #debug("getteleme a retet", ret)
+                
+                if lineno in self.expression_at_line:
+                    #actual local vars
+                    ret['expr'] = dict()
+                    localvars = {rec['name']: rec['value'] for rec in ret['localvars'] if rec['is_local']}
+                    node = self.expression_at_line[lineno]
+                    ret['expr']['sequence'] = node2seq(node, self.source_code, localvars)
+                    #tree = node2tree(node)
+                    #ret['treant'] = to_treant(node)
+                else:
+                    ret['expr'] = None
                 
                 if function in ["STEP_PY_STEP_OUTPUT", "STEP_PY_STEP_PRINT"] or filename_with_path == "<stdin>":
                     self.request_q.put("step")
                 else:
                     self.answer_q.put(ret)
+
+            elif msg == "expr":
+                filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
+                if lineno in self.expression_at_line:
+                    allvars = get_pointers(self.curframe)
+                    for v in allvars:
+                        if v['name'] == 'STEP_PY_STEP_OUTPUT':
+                            step_py_step_output = v
+                            break
+
+                    allvars.remove(v)
+                    localvars = {rec['name']: rec['value'] for rec in allvars if rec['is_local']}
+
+
+                    #debug("---", localvars, "---")
+                    node = self.expression_at_line[lineno]
+                    ret = dict()
+                    ret['treant'] = to_treant(node)
+                    ret['sequence'] = node2seq(node, self.source_code, localvars)
+
+                    self.answer_q.put(ret)
+
+                else:
+                    debug("itt nincs")
+                    self.answer_q.put("hiba")
+
             
             
             else:

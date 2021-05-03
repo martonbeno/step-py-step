@@ -1,7 +1,9 @@
-import re, copy
+import re
+import copy
+import ast
 
 def get_type(node):
-    return re.sub(r"^<class 'ast\.(.+)'>$", r'\1', str(type(node)))
+    return node.__class__.__name__
 	
 def eval_expr(node, variables):
     if get_type(node) == "Constant":
@@ -49,16 +51,22 @@ def eval_expr(node, variables):
         exe = compile(expr, filename="", mode="eval")
         return ast.Constant(eval(exe))
 
-def get_exprs(node):
+def get_exprs(code):
+    node = ast.parse(code)
+
     ret = []
-    #if isinstance(node, ast.expr): #TODO ast.expr
     if node.__class__ in [ast.BinOp, ast.BoolOp, ast.Compare, ast.UnaryOp]:
-    #if isinstance(node, ast.BinOp) or isinstance(node, ast.BoolOp) or isinstance(node, ast.Compare) or isinstance(node, ast.UnaryOp):
         ret.append(node)
     else:
         for child in ast.iter_child_nodes(node):
             ret = ret + get_exprs(child)
     return ret
+
+def node2seq(node, code, variables):
+    kod_mtx = code.split('\n')
+    tree = node2tree(node, kod_mtx, variables)
+    seq = tree2seq(tree)
+    return seq
 
 def node2tree(node, kod_mtx, variables):
 	d = dict()
@@ -109,6 +117,7 @@ def node2tree(node, kod_mtx, variables):
 
 def tree2seq(node, start=True):
     if start:
+        print(node)
         #deleting duplicates
         lst = tree2seq(node, False)
         ret = [lst[0]]

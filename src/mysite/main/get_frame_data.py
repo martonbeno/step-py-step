@@ -44,7 +44,7 @@ class Var:
 				print(f"HIBA {self.data}")
 				traceback.print_exc()
 		else:
-			ret['value'] = str(self.data)
+			ret['value'] = str(self.data) if self.is_udt else self.data
 
 		#ret['value'] = str(self.data) if not self.defined_elsewhere else None
 		ret['children'] = []
