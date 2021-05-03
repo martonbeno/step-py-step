@@ -6,6 +6,7 @@ import sys
 import shutil
 import traceback
 import ast
+from io import StringIO
 
 try:
     from .expression_analysis import get_exprs
@@ -24,7 +25,9 @@ class StepPyStep(pdb.Pdb):
 
         self.request_q = multiprocessing.Queue()
         self.answer_q = multiprocessing.Queue()
-        
+        self.sajat = StringIO()
+        kwargs['stdout'] = self.sajat
+
         path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
         self.filename = path + "tmp.py"
 
@@ -108,6 +111,7 @@ class StepPyStep(pdb.Pdb):
         sys.path.insert(1, '/home/beno/Desktop/steppystep/step-py-step/src/mysite/main')
         from get_frame_data import get_pointers
         from expression_analysis import node2seq, node2treant, node2tree
+        from error_handling import is_error_message
         def debug(*args):
             sys.stdout.write(' '.join(str(x) for x in args) + '\n')
         
@@ -150,8 +154,15 @@ class StepPyStep(pdb.Pdb):
                 print("xxxxx", self.curframe.f_locals)
 
             elif msg == "get":
-
                 ret = dict()
+                ret['error'] = None
+
+                debug("kimenet", self.sajat.getvalue().split('\n'), "eddigtart")
+                for x in self.sajat.getvalue().split('\n'):
+                    if is_error_message(x):
+                        ret['error'] = x
+                        break
+
                 ret['localvars'] = get_pointers(self.curframe)
                 for v in ret['localvars']:
                     if v['name'] == 'STEP_PY_STEP_OUTPUT':
@@ -209,7 +220,10 @@ if __name__ == "__main__":
             p.kill()
             break
         #time.sleep(1)
-        ret = p.request(r)
+        try:
+            ret = p.request(r)
+        except Exception:
+            print("inkább idelennnnnnnnnnnnnnnnnnnnnnn")
         print("------RET", ret)
         if ret == "exit":
             break
