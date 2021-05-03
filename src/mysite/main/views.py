@@ -9,7 +9,7 @@ import json
 
 # Create your views here.
 
-SPS_MODEL = StepPyStep()
+SPS_MODEL = None
 
 def index(response, id):
 	return render(response, "main/base.html", {'name':str(id**2)})
@@ -24,27 +24,33 @@ def create(response):
 	return render(response, "main/create.html", {'form':form})
 
 def api(request):
-	# return HttpResponse("okézsoké")
-	with open("ki.log", 'w+') as f:
-		f.write("eddigjo0s\n")
-		for k,v in request.POST.items():
-			f.write(f"{k}: {v}\n")
 
 	
-		f.write("eddigjo111\n")
-		command = request.POST['command']
-		args = json.loads(request.POST['args'])
-		
-		
-		if command == "start":
-			source_code = args['source_code']
-			ret = SPS_MODEL.start(source_code)
-		
-		elif command == "step":
-			SPS_MODEL.request("step")
-			ret = SPS_MODEL.request("get")
-			ret = json.dumps(ret)
-			print(ret)
+	command = request.POST['command']
+	args = json.loads(request.POST['args'])
+
+	print(command, args)
+	
+	
+	if command == "start":
+		global SPS_MODEL
+		SPS_MODEL = StepPyStep()
+
+		ret = SPS_MODEL.start(**args)
+	
+	elif command == "step":
+		SPS_MODEL.request("step")
+		ret = SPS_MODEL.request("get")
+		ret = json.dumps(ret)
+
+	elif command == "next":
+		SPS_MODEL.request("next")
+		ret = SPS_MODEL.request("get")
+		ret = json.dumps(ret)
+
+	elif command == "exit":
+		SPS_MODEL.request("exit")
+		ret = json.dumps({'exit':'yes'})
 	
 	
 	return HttpResponse(f"{ret}")

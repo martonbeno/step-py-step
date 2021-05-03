@@ -2,7 +2,10 @@ import pdb
 import copy
 import multiprocessing
 
-class myPdb(pdb.Pdb):
+
+
+
+class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
         # self.inp = kwargs['inp']
         # self.outp = kwargs['outp']
@@ -53,10 +56,9 @@ class myPdb(pdb.Pdb):
                 self.answer_q.put("exit")
                 return
             
-            elif msg == "lepj":
+            elif msg == "step":
                 self.onecmd("step")
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
-                #filename = filename_with_path.split('/')[-1]
                 self.answer_q.put(lineno)
                 break
 
@@ -72,12 +74,15 @@ class myPdb(pdb.Pdb):
 
             elif msg == "get":
 
-                print("flocals", self.curframe.f_locals)
-
                 ret = dict()
-                #line = "!_localvars=[(k, v) for k,v in locals().items() if not k.startswith('_') and isinstance(v,int)]"
-                #self.onecmd(line)
-                #ret['localvars'] = copy.deepcopy(_localvars)
+                ret['localvars'] = list()
+
+                for k,v in filter(lambda x:not x[0].startswith("__") and isinstance(x[1], int), self.curframe.f_locals.items()):
+                    if k.startswith("__"):
+                        continue
+                    ret['localvars'].append({k:v})
+
+
 
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
                 ret['lineno'] = lineno
@@ -87,81 +92,12 @@ class myPdb(pdb.Pdb):
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
                 self.answer_q.put(lineno)
 
-                #self.cmdloop(intro)
-                #return
-
-        #ígyis úgyis léptet
-
-        '''
-        goon = True
-        if msg == "step":
-            self.onecmd("step")
-        else:
-            goon = False
-
-        self.answer_q.put(lineno)
-
-        if goon:
-            self.cmdloop(intro)
-        else:
-            self.onecmd("exit")
-        return
-        
-        #check if we exited the main file
-        line = "!_FILENAME=__file__"
-        self.onecmd(line)
-        if filename != _FILENAME:
-            print("kilepek", filename, _FILENAME)
-            self.onecmd("exit")
-            return
-        else:
-            print("nem lepek ki", filename, _FILENAME)
-        
-        print(filename, lineno, function)
-        
-        #saving variables
-        # line = "!_localvars=[(k,type(v),v) for k,v in locals().items() if not k.startswith('_')]"
-        line = "!_localvars=[{'name':k, 'type':type(v), 'val':str(v)} for k,v in locals().items() if not k.startswith('_')]"
-        self.onecmd(line)
-        line = "!_globalvars=[(k,v) for k,v in globals().items() if not k.startswith('_')]"
-        self.onecmd(line)
-        
-        
-        #returning the state
-        ret = dict()
-        ret['localvars'] = ['localvars']#copy.deepcopy(_localvars)
-        ret['globalvars'] = ['globalvars']#copy.deepcopy(_globalvars)
-        ret['lineno'] = lineno
-        # self.outp(ret)
-        self.answer_q.put(ret)
-
-        if msg == "step":
-            self.onecmd("step")
-        elif msg.startswith("update "):
-            _, name, newval = msg.split()
-            if name in map(lambda x:x['name'], _localvars):
-                #TODO try-except-be kéne, hogy a típus ne okozzon bajt
-                line = f"!{name}={newval}"
-                print(f">> {line}")
-                self.onecmd(line)
-                self.onecmd('locals()') #TEST
-            else:
-                print("nincsilyen")
-            
-
-        #elif msg == "get" or msg == "":
-        #    self.cmdloop(intro)
-
-        
-        self.onecmd(msg)
-        # print("-----------------")
-        '''
         
 
 filename = "ja2.py"
 filename = "ja.py"
 
-p = myPdb(filename=filename)
+p = StepPyStep(filename=filename)
 
 while True:
     print("várom a parancsokat")

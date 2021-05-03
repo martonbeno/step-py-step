@@ -1,10 +1,17 @@
 <html>
 	<head>
+		{% load static %}
+		<link rel="stylesheet" href="{% static 'style.css' %}">
+		<link rel="stylesheet" href="{% static 'sh_style.css' %}">
+
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+		<script type="text/javascript" src="{% static 'sh_main.js' %}"></script>
+		<script type="text/javascript" src="{% static 'sh_python.js' %}"></script>
 		<script>
 			var SOURCE_CODE = '';
 			var DATA = {'lineno':1, 'localvars':[]};
-			
+			var ROWS = {}; //key: pointer, value: element
+			var ONLY_GLOBAL_POINTERS = [];
 			
 			function py_api_request(command, args, callback){
 				$.ajax({
@@ -20,25 +27,88 @@
 					//semmi
 				});
 			}
+
+			function testButtonPressed(){
+				console.log(getPointerMap(DATA['localvars']));
+				addRowFunctions(DATA['localvars']);
+			}
+
+			function exampleCode(example_code_id){
+				let args = { 'example_code_id': example_code_id };
+				startAnalysis(args);
+			}
 			
 			function readcode(){
 				let source_code = document.getElementById('ta').value;
+
 				let args = { 'source_code': source_code };
+				startAnalysis(args);
+			}
+
+			function startAnalysis(args){
 				py_api_request('start', args, function(data){
 					SOURCE_CODE = data;
-					document.getElementById('ki').innerHTML = SOURCE_CODE;
+					//document.getElementById('ta').style.display = "none";
+					//document.getElementById('readcode_button').style.display = "none";
+
+					let objectsToHide = document.getElementsByClassName("preAnalysis");
+					for(let i=0; i<objectsToHide.length; i++)
+						objectsToHide[i].style.display = "none";
+					let objectsToShow = document.getElementsByClassName("duringAnalysis");
+					for(let i=0; i<objectsToShow.length; i++)
+						objectsToShow[i].style.display = "block";
+
+					let formattedCode = getFormattedCode();
+					document.getElementById('ki').innerHTML = formattedCode;
+					sh_highlightDocument();
 				});
-				
 			}
 			
 			function step(){
 				py_api_request('step', {}, function(data){
 					DATA = JSON.parse(data);
-					let codeMtx = makeCodeMtx();
-					let varMtx = makeVarMtx();
-					document.getElementById('ki').innerHTML = makeTableHTML(codeMtx);
-					document.getElementById('variables').innerHTML = makeTableHTML(varMtx);
+					let formattedCode = getFormattedCode();
+					document.getElementById('ki').innerHTML = formattedCode;
+					sh_highlightDocument();
+					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
+					document.getElementById('outputField').innerHTML = DATA['output'];
 				});
+			}
+			
+			function next(){
+				py_api_request('next', {}, function(data){
+					DATA = JSON.parse(data);
+					let formattedCode = getFormattedCode();
+					document.getElementById('ki').innerHTML = formattedCode;
+					sh_highlightDocument();
+					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
+					document.getElementById('outputField').innerHTML = DATA['output'];
+				});
+			}
+			
+			function exit_code(){
+				py_api_request('exit', {}, function(data){
+					DATA = JSON.parse(data);
+					console.log("kiléptem");
+					location.reload();
+					return false;
+				});
+			}
+
+			function getFormattedCode(){
+				let lines = SOURCE_CODE.split('\n');
+				let ret = "";
+				for(let i=0; i<lines.length; i++){
+					if(i+1 == DATA['lineno']){
+						ret += "➔ ";
+					}
+					else{
+						ret += "  ";
+					}
+					ret += lines[i];
+					ret += "\n";
+				}
+				return ret;
 			}
 			
 			function makeCodeMtx(){
@@ -51,48 +121,139 @@
 				}
 				return ret;
 			}
-			
-			function makeVarMtx(){
-				ret = [];
-				for(let key in DATA['localvars']){
-					ret.push([ key, DATA['localvars'][key] ]);
+
+			function makeTable(localvars){
+				//TODO ha esetleg html cuccok lennének a táblázat mezőiben, azokat escape-elni valahogy
+
+				let ret = "<table border=1>";
+
+				for(let i=0; i<localvars.length; i++){
+					let v = localvars[i];
+					let backgroundColor = v['is_local'] ? '#FFFFFF' : '#888888';
+					if(v['is_global'] && !v['is_local']){
+						ONLY_GLOBAL_POINTERS.push(v['pointer']);
+					}
+
+					ret += '<tr ';
+					ret += 'class="pointer_' + v['pointer'] + '" ';
+					ret += 'style="background-color:' + backgroundColor + '">';
+					//ret += '<tr>';
+					ret += "<td>" + v['name'] + "</td>";
+					if(! v['is_udt']){
+						
+						if(! v['defined_elsewhere']){
+							ret += "<td>" + v['type'] + "</td>";
+							ret += "<td>" + v['value'] + "</td>";
+						}
+						else{
+							ret += "<td></td>";
+							ret += "<td>máshol definiált</td>";
+						}
+
+					}
+
+					else{
+						ret += "<td>" + v['type'] + "</td>";
+						ret += "<td>" + makeTable(v['children']) + "</td>";
+					}
+					ret += "</tr>";
+				}
+
+				ret += "</table>";
+				return ret;
+			}
+
+			function getPointerMap(localvars, start=true){
+				let ret = {};
+				if(start){
+					for(let i=0; i<localvars.length; i++){
+						let v = localvars[i];
+						ret = Object.assign({}, ret, getPointerMap(v, false));
+					}
+					return ret;
+				} else {
+					let pointer = localvars['pointer'];
+					ret[pointer] = document.getElementsByClassName("pointer_" + pointer);
+					for(let i=0; i<localvars['children'].length; i++){
+						let v = localvars['children'][i];
+						ret = Object.assign({}, ret, getPointerMap(v, false));
+					}
 				}
 				return ret;
 			}
-			
-			
-			//stackoverflow
-			function makeTableHTML(myArray) {
-				var result = "<table border=1>";
-				for(var i=0; i<myArray.length; i++) {
-					result += "<tr>";
-					for(var j=0; j<myArray[i].length; j++){
-						result += "<td>"+myArray[i][j]+"</td>";
-					}
-					result += "</tr>";
-				}
-				result += "</table>";
 
-				//document.getElementById('ki').innerHTML = result;
-				return result;
+			function addRowFunctions(localvars){
+				let pointerMap = getPointerMap(localvars);
+				for(var pointer in pointerMap){
+					let objArr = pointerMap[pointer];
+					let className = "pointer_" + pointer;
+
+					for(let i=0; i<objArr.length; i++){
+
+						function mouseEnter(event){
+							console.log("rajta vagyok");
+							let elementsToHighlight = document.getElementsByClassName(className);
+							for(let j=0; j<elementsToHighlight.length; j++){
+								if(objArr[i] == elementsToHighlight[j])
+									continue;
+								elementsToHighlight[j].style.backgroundColor = "#FFFF00";
+							}
+						}
+
+						//TODO eredeti színre visszaállítani
+						function mouseLeave(event){
+							let elementsToHighlight = document.getElementsByClassName(className);
+							for(let j=0; j<elementsToHighlight.length; j++){
+								elementsToHighlight[j].style.backgroundColor = "#FFFFFF";
+							}
+						}
+						objArr[i].addEventListener("mouseover", mouseEnter);
+						objArr[i].addEventListener("mouseleave", mouseLeave);
+					}
+				}
 			}
+
+
+
 		</script>
 	</head>
 	<body>
-		<form method="post" action="/create/">
-			<!-- {{form.as_p}} -->
-			<textarea id="ta" name="content" rows="15" cols="100"></textarea>
-			<button type="submit" name="save">Create New</button>
-		</form>
+		<div class="split left">
+			<textarea id="ta" name="content" class="preAnalysis" rows="15" cols="75"></textarea>
+			<script type="text/javascript" src="{% static 'allowtabs.js' %}"></script>
+			
+			<pre class="sh_python">
+				<p id="ki"></p>
+			</pre>
+			
+			<button class="preAnalysis" onclick="readcode()">Read code</button> 
+			<button class="preAnalysis" onclick="exampleCode(1)">Example 1</button> 
+			<button class="preAnalysis" onclick="exampleCode(2)">Example 2</button> 
+			<button class="preAnalysis" onclick="exampleCode(3)">Example 3</button>
+			<br>
+			<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>
+			<button class="duringAnalysis" onclick="next()" style="display:none;">Next</button><br>
+			<button class="duringAnalysis" onclick="exit_code()" style="display:none;">Exit code</button><br>
+			<button onclick="testButtonPressed()">Teszt</button>
+			<pre>
+				<p>---Output---</p>
+				<p id="outputField"></p>
+			</pre>
+		</div>
+		<div class="split right">
+			<pre>
+				<p id="variables"></p>
+			</pre>
+		</div>
 		
-		<button onclick="readcode()">Read code</button><br>
-		<button onclick="step()">Step</button>
-		
-		<pre>
-			<p id="ki"></p>
-		</pre>
-		<br>
-		<p id="variables"></p>
-		
+		<script>
+			var fent = document.getElementById("fent");
+			var lent = document.getElementById("lent");
+			fent.addEventListener("mouseenter", function(event){
+				console.log("bentvagy");
+				console.log(event);
+				lent.style.backgroundColor = "#FF0000";
+			});
+		</script>
 	</body>
 </html>
