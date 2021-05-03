@@ -82,7 +82,7 @@ class StepPyStep(pdb.Pdb):
         import inspect, copy, re, sys
         sys.path.insert(1, '/home/beno/Desktop/steppystep/step-py-step/src/mysite/main')
         from get_frame_data import get_pointers
-        from expression_analysis import node2seq, to_treant
+        from expression_analysis import node2seq, node2treant, node2tree
         def debug(*args):
             sys.stdout.write(' '.join(str(x) for x in args) + '\n')
         
@@ -146,8 +146,7 @@ class StepPyStep(pdb.Pdb):
                     localvars = {rec['name']: rec['value'] for rec in ret['localvars'] if rec['is_local']}
                     node = self.expression_at_line[lineno]
                     ret['expr']['sequence'] = node2seq(node, self.source_code, localvars)
-                    #tree = node2tree(node)
-                    #ret['treant'] = to_treant(node)
+                    ret['expr']['treant'] = node2treant(node, self.source_code, localvars)
                 else:
                     ret['expr'] = None
                 
@@ -155,32 +154,6 @@ class StepPyStep(pdb.Pdb):
                     self.request_q.put("step")
                 else:
                     self.answer_q.put(ret)
-
-            elif msg == "expr":
-                filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
-                if lineno in self.expression_at_line:
-                    allvars = get_pointers(self.curframe)
-                    for v in allvars:
-                        if v['name'] == 'STEP_PY_STEP_OUTPUT':
-                            step_py_step_output = v
-                            break
-
-                    allvars.remove(v)
-                    localvars = {rec['name']: rec['value'] for rec in allvars if rec['is_local']}
-
-
-                    #debug("---", localvars, "---")
-                    node = self.expression_at_line[lineno]
-                    ret = dict()
-                    ret['treant'] = to_treant(node)
-                    ret['sequence'] = node2seq(node, self.source_code, localvars)
-
-                    self.answer_q.put(ret)
-
-                else:
-                    debug("itt nincs")
-                    self.answer_q.put("hiba")
-
             
             
             else:

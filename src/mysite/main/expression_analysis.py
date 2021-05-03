@@ -4,7 +4,7 @@ import ast
 
 def get_type(node):
     return node.__class__.__name__
-	
+    
 def eval_expr(node, variables):
     if get_type(node) == "Constant":
         return node
@@ -69,51 +69,51 @@ def node2seq(node, code, variables):
     return seq
 
 def node2tree(node, kod_mtx, variables):
-	d = dict()
-	d['type'] = get_type(node)
-	
-	# if d['type'] not in ['Module', 'Store', 'Add', 'Mult', 'Div']:
-	if 'lineno' in node.__dict__:
-		
-		d['from_line'] = node.lineno-1
-		d['to_line'] = node.end_lineno-1
-		d['from_char'] = node.col_offset
-		d['to_char'] = node.end_col_offset-1
-		#ha egy sorban van az egész node
-		if node.lineno == node.end_lineno:
-			d['code'] = kod_mtx[node.lineno-1][node.col_offset:node.end_col_offset]
-		#ha két sorban van az egész node
-		elif node.lineno + 1 == node.end_lineno:
-			d['code'] = kod_mtx[node.lineno-1][node.col_offset:]
-			d['code'] += kod_mtx[node.end_lineno-1][:node.end_col_offset]
-		#ha több, mint két sorban van a node
-		elif node.lineno + 1 < node.end_lineno:
-			d['code'] = kod_mtx[node.lineno-1][node.col_offset:]
-			for i in range(node.lineno, node.end_lineno-1):
-				d['code'] += kod_mtx[i]
-			d['code'] += kod_mtx[node.end_lineno-1][:node.end_col_offset]
-		else:
-			raise Exception("baj a kód kiolvasással")
-	
-	if d['type'] in ("BinOp", "BoolOp", "Compare", "UnaryOp"):
-		d['eval'] = eval_expr(node, variables).value
-	elif d['type'] == "Name":
-		#d['eval'] = eval_expr(variables[node.id], variables).value
-		d['eval'] = eval_expr(node, variables).value        
-	elif d['type'] == "Constant":
-		d['eval'] = node.value
-	else:
-		d['eval'] = None
-	
-	if d['type'] == "Assign":
-		targets = node.targets
-		t = targets[0].id
-		variables[t] = eval_expr(node.value)
-		print(variables)
-		
-	
-	d['children'] = [node2tree(child, kod_mtx, variables) for child in ast.iter_child_nodes(node)]
-	return d
+    d = dict()
+    d['type'] = get_type(node)
+    
+    # if d['type'] not in ['Module', 'Store', 'Add', 'Mult', 'Div']:
+    if 'lineno' in node.__dict__:
+        
+        d['from_line'] = node.lineno-1
+        d['to_line'] = node.end_lineno-1
+        d['from_char'] = node.col_offset
+        d['to_char'] = node.end_col_offset-1
+        #ha egy sorban van az egész node
+        if node.lineno == node.end_lineno:
+            d['code'] = kod_mtx[node.lineno-1][node.col_offset:node.end_col_offset]
+        #ha két sorban van az egész node
+        elif node.lineno + 1 == node.end_lineno:
+            d['code'] = kod_mtx[node.lineno-1][node.col_offset:]
+            d['code'] += kod_mtx[node.end_lineno-1][:node.end_col_offset]
+        #ha több, mint két sorban van a node
+        elif node.lineno + 1 < node.end_lineno:
+            d['code'] = kod_mtx[node.lineno-1][node.col_offset:]
+            for i in range(node.lineno, node.end_lineno-1):
+                d['code'] += kod_mtx[i]
+            d['code'] += kod_mtx[node.end_lineno-1][:node.end_col_offset]
+        else:
+            raise Exception("baj a kód kiolvasással")
+    
+    if d['type'] in ("BinOp", "BoolOp", "Compare", "UnaryOp"):
+        d['eval'] = eval_expr(node, variables).value
+    elif d['type'] == "Name":
+        #d['eval'] = eval_expr(variables[node.id], variables).value
+        d['eval'] = eval_expr(node, variables).value        
+    elif d['type'] == "Constant":
+        d['eval'] = node.value
+    else:
+        d['eval'] = None
+    
+    if d['type'] == "Assign":
+        targets = node.targets
+        t = targets[0].id
+        variables[t] = eval_expr(node.value)
+        print(variables)
+        
+    
+    d['children'] = [node2tree(child, kod_mtx, variables) for child in ast.iter_child_nodes(node)]
+    return d
 
 def tree2seq(node, start=True):
     if start:
@@ -177,14 +177,24 @@ def tree2seq(node, start=True):
         return ret
 
 def to_html(text):
-	return text.replace('\n', ';').replace('\t', '	')
+    return text.replace('\n', ';').replace('\t', '    ')
+
+def node2treant(node, code, variables):
+    kod_mtx = code.split('\n')
+    tree = node2tree(node, kod_mtx, variables)
+    treant = to_treant(tree)
+    return treant
 
 def to_treant(node):
-	ret = dict()
-	ret['text'] = {'name': node['type']}
-	if 'eval' in node:
-		ret['text']['title'] = node['eval'] if node['eval'] else ''
-	if 'code' in node:
-		ret['text']['desc'] = to_html(node['code'])
-	ret['children'] = [to_treant(child) for child in node['children']]
-	return ret
+    #kod_mtx = code.split('\n')
+    #node = node2tree(ast_node, kod_mtx, variables)
+    #itt a sima node nem AST !
+
+    ret = dict()
+    ret['text'] = {'name': node['type']}
+    if 'eval' in node:
+        ret['text']['title'] = node['eval'] if node['eval'] else ''
+    if 'code' in node:
+        ret['text']['desc'] = to_html(node['code'])
+    ret['children'] = [to_treant(child) for child in node['children']]
+    return ret
