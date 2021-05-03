@@ -9,14 +9,12 @@ import ast
 from io import StringIO
 
 try:
-    from .expression_analysis import get_exprs
+    from .expression_analysis import get_exprs, is_importing_node
 except ImportError:
-    from expression_analysis import get_exprs
+    from expression_analysis import get_exprs, is_importing_node
 
 
-class UserCompileError(Exception):
-    pass
-class UserRuntimeError(Exception):
+class ContainsImportError(Exception):
     pass
 
 class StepPyStep(pdb.Pdb):
@@ -57,14 +55,17 @@ class StepPyStep(pdb.Pdb):
                 "source_code": None }
 
         try:
-            ast.parse(source_code)
+            root = ast.parse(source_code)
+            if is_importing_node(root, source_code):
+                raise ContainsImportError()
             ret['compile_success'] = True
+        except ContainsImportError:
+            ret['compile_success'] = False
+            ret['error_message'] = "Error! Code cannot contain imports!"
+            return ret
         except Exception:
             error_message = traceback.format_exc()
             error_message = error_message.split('"<unknown>", ')[-1]
-            #error_message = "HIBA" + error_message
-            #error_message += "????????????????????"
-            #print("okokoko", error_message)
             ret['compile_success'] = False
             ret['error_message'] = error_message
             return ret

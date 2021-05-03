@@ -68,7 +68,21 @@ def node2seq(node, code, variables):
     seq = tree2seq(tree)
     return seq
 
-def node2tree(node, kod_mtx, variables):
+def is_importing_node(node, source_code):
+    kod_mtx = source_code.split('\n')
+    tree = node2tree(node, kod_mtx, {}, skip_eval=True)
+    return is_importing_tree(tree)
+
+def is_importing_tree(tree):
+    if tree['type'] == "Import":
+        return True
+
+    for child in tree['children']:
+        if is_importing_tree(child):
+            return True
+    return False
+
+def node2tree(node, kod_mtx, variables, skip_eval=False):
     d = dict()
     d['type'] = get_type(node)
     
@@ -95,24 +109,27 @@ def node2tree(node, kod_mtx, variables):
         else:
             raise Exception("baj a kód kiolvasással")
     
-    if d['type'] in ("BinOp", "BoolOp", "Compare", "UnaryOp"):
-        d['eval'] = eval_expr(node, variables).value
-    elif d['type'] == "Name":
-        #d['eval'] = eval_expr(variables[node.id], variables).value
-        d['eval'] = eval_expr(node, variables).value        
-    elif d['type'] == "Constant":
-        d['eval'] = node.value
-    else:
-        d['eval'] = None
-    
+
+    if not skip_eval:
+        if d['type'] in ("BinOp", "BoolOp", "Compare", "UnaryOp"):
+            d['eval'] = eval_expr(node, variables).value
+        elif d['type'] == "Name":
+            #d['eval'] = eval_expr(variables[node.id], variables).value
+            d['eval'] = eval_expr(node, variables).value        
+        elif d['type'] == "Constant":
+            d['eval'] = node.value
+        else:
+            d['eval'] = None
+    '''
     if d['type'] == "Assign":
         targets = node.targets
         t = targets[0].id
         variables[t] = eval_expr(node.value)
         print(variables)
+    '''
         
     
-    d['children'] = [node2tree(child, kod_mtx, variables) for child in ast.iter_child_nodes(node)]
+    d['children'] = [node2tree(child, kod_mtx, variables, skip_eval) for child in ast.iter_child_nodes(node)]
     return d
 
 def tree2seq(node, start=True):
