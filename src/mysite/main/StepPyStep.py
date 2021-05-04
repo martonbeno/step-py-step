@@ -144,15 +144,34 @@ class StepPyStep(pdb.Pdb):
                 self.request_q.put("get")
                 break
 
+            elif msg.startswith("modify"):
+                #_, var_name, value = msg.split()
+                var_name, value = re.findall(r'modify (\w+) (.+)', msg)[0]
+                line = f"{var_name}={value}"
+                try:
+                    exec(line)
+                    print("megyez")
+                except NameError:
+                    value = value.replace('"', '\\"')
+                    value = '"' + value + '"'
+                    line = f"{var_name}={value}"
+                    print("nem megy ez")
+                line = "!" + line
+                debug("ezt próbálom", line)
+                self.onecmd(line)
+                self.request_q.put("get")
+
             elif msg == "x":
                 self.onecmd("!x=999;y=888")
-                filename_with_path, lineno, function, copyde_context, index = inspect.getframeinfo(self.curframe)
-                self.answer_q.put(f"xelek{lineno}")
+                self.request_q.put("get")
+                #self.answer_q.put(f"xelek{lineno}")
+                '''
                 return
                 line = "!_localvars=[(k, v) for k,v in locals().items() if not k.startswith('_') and isinstance(v,int)]"
                 self.onecmd(line)
                 print("localvars", _localvars)
                 print("xxxxx", self.curframe.f_locals)
+                '''
 
             elif msg == "get":
                 ret = dict()

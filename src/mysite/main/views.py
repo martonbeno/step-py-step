@@ -51,6 +51,10 @@ def api(request):
 		SPS_MODEL.request("next")
 		ret = SPS_MODEL.request("get")
 
+	elif command == "modify":
+		msg = f"modify {args['var_name']} {args['value']}"
+		ret = SPS_MODEL.request(msg)
+
 	elif command == "exit":
 		SPS_MODEL.request("exit")
 		ret = {'exit':'yes'}

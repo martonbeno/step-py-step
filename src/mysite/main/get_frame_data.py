@@ -2,7 +2,7 @@ import inspect
 import ctypes
 import traceback
 import copy
-
+import json
 
 class Var:
 	def __init__(self, pointer, name):
@@ -10,6 +10,7 @@ class Var:
 		self.name = name
 		self.is_processed = False #valszeg nem kell
 		self.is_udt = False
+		self.is_container = False
 		self.children = []
 
 	def __str__(self):
@@ -18,6 +19,8 @@ class Var:
 	def get_dict(self):
 		assert self.is_processed
 		ret = dict()
+
+		#skipping non-user-defined classes
 		if not self.defined_elsewhere and self.type == "Class" and not self.is_udt:
 			return ret
 
@@ -26,6 +29,7 @@ class Var:
 		ret['is_local'] = None
 		ret['is_global'] = None
 		ret['is_udt'] = self.is_udt
+		ret['is_container'] = self.is_container
 		ret['defined_elsewhere'] = self.defined_elsewhere
 		if self.defined_elsewhere:
 			ret['type'] = None
@@ -44,7 +48,8 @@ class Var:
 				print(f"HIBA {self.data}")
 				traceback.print_exc()
 		else:
-			ret['value'] = str(self.data) if self.is_udt else self.data
+			#ret['value'] = self.data if is_json_serializable(self.data) else str(self.data)
+			ret['value'] = self.data
 
 		#ret['value'] = str(self.data) if not self.defined_elsewhere else None
 		ret['children'] = []
@@ -64,15 +69,47 @@ class Var:
 			self.data = ctypes.cast(self.pointer, ctypes.py_object).value
 			self.type = self.data.__class__
 
+
 			self.is_udt = True #user defined type
+			self.is_container = False
 			if self.type in (int, float, complex, bool, str, type(None), type):
 				self.is_udt = False
-			if inspect.ismodule(self.type):
-				self.is_udt = False
-			#if inspect.getmodule(self.data) is not None: #probably this is enough
-			#	self.is_udt = False
 
-			if self.is_udt:
+			elif inspect.ismodule(self.type):
+				self.is_udt = False
+
+			elif self.type in (list, tuple):
+				self.is_udt = False
+				self.is_container = True
+				for i,v in enumerate(self.data):
+					child_pointer = id(v)
+					child = Var(child_pointer, i)
+					self.children.append(child)
+
+			elif self.type is dict:
+				self.is_udt = False
+				self.is_container = True
+				for k,v in self.data.items():
+					child_pointer = id(v)
+
+					#make key passable to json
+					if k.__class__ not in (str, int, float, bool, None):
+						k = str(k)
+
+					child = Var(child_pointer, k)
+					self.children.append(child)
+
+			elif self.type is set:
+				self.is_udt = False
+				self.is_container = True
+				for v in self.data:
+					child_pointer = id(v)
+					child = Var(child_pointer, '')
+					self.children.append(child)
+
+
+			elif self.is_udt:
+				self.is_container = True
 				try:
 					for k,v in self.data.__dict__.items():
 						child_pointer = id(v)

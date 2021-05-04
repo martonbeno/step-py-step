@@ -6,6 +6,7 @@ def get_type(node):
     return node.__class__.__name__
     
 def eval_expr(node, variables):
+    print("EVAÉLEXPR", variables)
     if get_type(node) == "Constant":
         return node
 

@@ -135,6 +135,8 @@
 					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
 					document.getElementById('outputField').innerHTML = DATA['output'];
 
+					addRowFunctions(DATA['localvars']);
+
 
 					let expressionAnalysisButton = document.getElementById('expressionAnalysisButton');
 					let openTreantButton = document.getElementById('treantButton');
@@ -218,7 +220,8 @@
 					ret += 'style="background-color:' + backgroundColor + '">';
 					//ret += '<tr>';
 					ret += "<td>" + v['name'] + "</td>";
-					if(! v['is_udt']){
+					//if(! v['is_udt']){
+					if(! v['is_container']){
 						
 						if(! v['defined_elsewhere']){
 							ret += "<td>" + v['type'] + "</td>";
@@ -263,6 +266,7 @@
 
 			function addRowFunctions(localvars){
 				let pointerMap = getPointerMap(localvars);
+				console.log("pointermap", pointerMap);
 				for(var pointer in pointerMap){
 					let objArr = pointerMap[pointer];
 					let className = "pointer_" + pointer;
@@ -286,14 +290,62 @@
 								elementsToHighlight[j].style.backgroundColor = "#FFFFFF";
 							}
 						}
-						objArr[i].addEventListener("mouseover", mouseEnter);
-						objArr[i].addEventListener("mouseleave", mouseLeave);
+
+						function mouseClick(event){
+							if(IS_MODIFYING)
+								return;
+
+							console.log(event);
+							LAST_CLICKED = event.target;
+							let row = event.target;
+							while(row.nodeName != "TR")
+								row = row.parentElement;
+
+							let leftCell = row.childNodes[0];
+							let rightCell = row.childNodes[row.childNodes.length-1];
+
+							let changeFrom = rightCell.innerHTML;
+							rightCell.innerHTML = "változás szele";
+							let inputField = document.createElement("INPUT");
+							inputField.value = changeFrom;
+							rightCell.innerHTML = "";
+							rightCell.appendChild(inputField);
+
+							inputField.focus();
+							IS_MODIFYING = true;
+
+							inputField.addEventListener("keyup", function(event2){
+								event2.preventDefault();
+								let self = event2.target;
+								if(event2.keyCode === 13 && self === document.activeElement){ //ENTER
+									console.log("első", event2);
+									console.log("changeto", self.value);
+									IS_MODIFYING = false;
+
+									//TODO elgánsabban, mikor csinálom a highlightot
+									let args = {'var_name': leftCell.innerText, 'value': self.value}
+									py_api_request('modify', args, function(data){
+										setData(data);
+									});
+
+								}
+								else if(event2.keyCode === 27){ //ESCAPE
+									rightCell.innerHTML = changeFrom;
+									rightCell.removeChild(self);
+									IS_MODIFYING = false;
+								}
+							});
+						}
+
+						//objArr[i].addEventListener("mouseover", mouseEnter);
+						//objArr[i].addEventListener("mouseleave", mouseLeave);
+						objArr[i].addEventListener("click", mouseClick);
 					}
 				}
 			}
 
-
-
+		var IS_MODIFYING = false;
+		var LAST_CLICKED;
 		</script>
 	</head>
 	<body>
