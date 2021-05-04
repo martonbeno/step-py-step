@@ -27,9 +27,13 @@ def tree(request):
 	
 	return render(request, "main/tree.html", {'nodeStructure':nodeStructure})
 
-def create(response):
-	form = CreateNewList()
-	return render(response, "main/create.html", {'form':form})
+def create(request):
+	print(request.FILES)
+	usercode = ''
+	if 'usercode' in request.FILES:
+		usercode = request.FILES['usercode'].file.read().decode('utf-8')
+
+	return render(request, "main/create.html", {'usercode': usercode})
 
 def api(request):
 	command = request.POST['command']

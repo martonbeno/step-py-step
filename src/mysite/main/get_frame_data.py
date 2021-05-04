@@ -37,7 +37,6 @@ class Var:
 			ret['type'] = "Class"
 		else:
 			ret['type'] = self.type.__name__
-		#ret['type'] = self.type.__name__ if not self.defined_elsewhere else None
 
 		if self.defined_elsewhere:
 			ret['value'] = None
@@ -48,10 +47,8 @@ class Var:
 				print(f"HIBA {self.data}")
 				traceback.print_exc()
 		else:
-			#ret['value'] = self.data if is_json_serializable(self.data) else str(self.data)
-			ret['value'] = self.data
+			ret['value'] = self.data if not self.is_udt else str(self.data)
 
-		#ret['value'] = str(self.data) if not self.defined_elsewhere else None
 		ret['children'] = []
 		for child in self.children:
 			ret['children'].append(child.get_dict())
@@ -209,18 +206,5 @@ def get_pointers_from_scope(frame, scope):
 			generations.append(new_generation)
 		else:
 			break
-
-	'''
-	print("####")
-	for i, gen in enumerate(generations):
-		for item in gen:
-			print(i, str(item))
-	print("####")
-
-	print("&&dict&&")
-	for i, node in enumerate(first_gen):
-		print(i, node.get_dict())
-	print("&&/dict&&")
-	'''
 
 	return [node.get_dict() for node in first_gen]

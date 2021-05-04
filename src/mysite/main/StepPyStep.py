@@ -6,6 +6,7 @@ import sys
 import traceback
 import ast
 import os
+import datetime
 from io import StringIO
 
 try:
@@ -16,6 +17,10 @@ except ImportError:
 
 class ContainsImportError(Exception):
     pass
+
+def generate_filename():
+    now = str(datetime.datetime.now())
+    return "USERSCRIPT_" + re.sub(r'\D', '_', now) + ".py"
 
 class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
@@ -29,6 +34,7 @@ class StepPyStep(pdb.Pdb):
         self.path = os.path.realpath(__file__) #...../mysite/main/StepPyStep.py
         self.path = os.path.dirname(self.path) #...../mysite/main/
         self.path = os.path.dirname(self.path) #...../mysite/
+        self.filename = None
 
         super().__init__(**kwargs)
     
@@ -41,8 +47,8 @@ class StepPyStep(pdb.Pdb):
         
         elif example_code_id is not None:
             examples_path = os.path.join(self.path, 'examples')
-            example_file = os.path.join(examples_path, f'example{example_code_id}.py')
-            with open(example_file, 'r') as f:
+            self.filename = os.path.join(examples_path, f'example{example_code_id}.py')
+            with open(self.filename, 'r') as f:
                 source_code = f.read()
         
         
@@ -80,8 +86,15 @@ class StepPyStep(pdb.Pdb):
         return ret
 
     def rs(self):
-        self._runscript("USERFILE.py")
-        
+        '''
+        self.filename = generate_filename()
+        fullpath = os.path.join(self.path, "usercodes", self.filename)
+        with open(fullpath, 'w+', encoding='utf-8') as f:
+            f.write(self.source_code)
+        '''
+
+        self._runscript("kamu.py")
+    
     def _runscript(self, filename):
         import __main__
         __main__.__dict__.clear()
@@ -97,6 +110,7 @@ class StepPyStep(pdb.Pdb):
         statement = "exec(compile(%r, %r, 'exec'))" % \
                         (self.source_code, self.mainpyfile)
         self.run(statement)
+    
 
     def kill(self):
         print("KILLL")
