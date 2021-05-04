@@ -35,19 +35,20 @@ class StepPyStep(pdb.Pdb):
         self.path = os.path.dirname(self.path) #...../mysite/main/
         self.path = os.path.dirname(self.path) #...../mysite/
         self.filename = None
+        print(self.get_example_files())
 
         super().__init__(**kwargs)
     
 
-    def start(self, source_code=None, example_code_id=None):
-        if source_code is None and example_code_id is None:
+    def start(self, source_code=None, example_file_name=None):
+        if source_code is None and example_file_name is None:
             debug_file = os.path.join(self.path, 'tmp.py')
             with open(debug_file, 'r', encoding='utf-8') as f:
                 source_code = f.read()
         
-        elif example_code_id is not None:
+        elif example_file_name is not None:
             examples_path = os.path.join(self.path, 'examples')
-            self.filename = os.path.join(examples_path, f'example{example_code_id}.py')
+            self.filename = os.path.join(examples_path, example_file_name)
             with open(self.filename, 'r') as f:
                 source_code = f.read()
         
@@ -86,13 +87,6 @@ class StepPyStep(pdb.Pdb):
         return ret
 
     def rs(self):
-        '''
-        self.filename = generate_filename()
-        fullpath = os.path.join(self.path, "usercodes", self.filename)
-        with open(fullpath, 'w+', encoding='utf-8') as f:
-            f.write(self.source_code)
-        '''
-
         self._runscript("kamu.py")
     
     def _runscript(self, filename):
@@ -111,6 +105,9 @@ class StepPyStep(pdb.Pdb):
                         (self.source_code, self.mainpyfile)
         self.run(statement)
     
+    def get_example_files(self):
+        examples_path = os.path.join(self.path, 'examples')
+        return sorted(os.listdir(examples_path))
 
     def kill(self):
         print("KILLL")

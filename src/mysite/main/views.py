@@ -6,6 +6,7 @@ from .models import Szamlalo
 from .StepPyStep import StepPyStep
 
 import json
+import os
 
 # Create your views here.
 
@@ -33,7 +34,13 @@ def create(request):
 	if 'usercode' in request.FILES:
 		usercode = request.FILES['usercode'].file.read().decode('utf-8')
 
-	return render(request, "main/create.html", {'usercode': usercode})
+	path = os.path.realpath(__file__)	#..../mysite/main/views.py
+	path = os.path.dirname(path)		#..../mysite/main/
+	path = os.path.dirname(path)		#..../mysite/
+	examples_path = os.path.join(path, "examples")
+	example_files = sorted(os.listdir(examples_path))
+
+	return render(request, "main/create.html", {'usercode': usercode, 'example_files': example_files})
 
 def api(request):
 	command = request.POST['command']

@@ -351,12 +351,34 @@
 	</head>
 	<body>
 		<div class="split left">
+
 			<textarea id="ta" name="content" class="preAnalysis" rows="15" cols="75">{{usercode}}</textarea>
 			<script type="text/javascript" src="{% static 'allowtabs.js' %}"></script>
 
+			<pre class="sh_python">
+				<p id="ki"></p>
+			</pre>
+
+		
+			<select class="preAnalysis" onchange="onSelectExample(this)">
+				<option selected value="">Select example</option>
+			{% for example_file in example_files %}
+				<option value="{{example_file}}">{{example_file}}</option>
+			{% endfor %}
+			</select><br><br>
+			<script>
+				function onSelectExample(x){
+					let filename = x.selectedOptions[0].value;
+					if(filename){
+						let args = { 'example_file_name': filename };
+						startAnalysis(args);
+					}
+				}
+			</script>
+
 			<form method="post" enctype="multipart/form-data">
 				{% csrf_token %}
-				<input type="file" name="usercode" onchange="onFileUpload(this)">
+				<input class="preAnalysis" type="file" name="usercode" onchange="onFileUpload(this)">
 			</form>
 			<script>
 				function onFileUpload(x){
@@ -367,11 +389,6 @@
 						x.form.submit();
 				}
 			</script>
-
-			
-			<pre class="sh_python">
-				<p id="ki"></p>
-			</pre>
 			
 			<button class="preAnalysis" onclick="readcode()">Read code</button> 
 			<button class="preAnalysis" onclick="exampleCode(1)">Example 1</button> 
