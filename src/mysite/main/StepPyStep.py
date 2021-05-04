@@ -3,9 +3,9 @@ import copy
 import multiprocessing
 import re
 import sys
-import shutil
 import traceback
 import ast
+import os
 from io import StringIO
 
 try:
@@ -23,30 +23,26 @@ class StepPyStep(pdb.Pdb):
 
         self.request_q = multiprocessing.Queue()
         self.answer_q = multiprocessing.Queue()
-        self.sajat = StringIO()
-        kwargs['stdout'] = self.sajat
+        self.sps_output = StringIO()
+        kwargs['stdout'] = self.sps_output
 
-        path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
-        self.filename = path + "tmp.py"
-
-        #kwargs['stdout'] = open("kifele.txt", 'a')
+        self.path = os.path.realpath(__file__) #...../mysite/main/StepPyStep.py
+        self.path = os.path.dirname(self.path) #...../mysite/main/
+        self.path = os.path.dirname(self.path) #...../mysite/
 
         super().__init__(**kwargs)
-        
-        # self._runscript(self.filename)
     
+
     def start(self, source_code=None, example_code_id=None):
         if source_code is None and example_code_id is None:
-            with open(self.filename, 'r', encoding='utf-8') as f:
+            debug_file = os.path.join(self.path, 'tmp.py')
+            with open(debug_file, 'r', encoding='utf-8') as f:
                 source_code = f.read()
-
-        elif source_code is not None:
-            self.create_file(source_code)
-
+        
         elif example_code_id is not None:
-            self.prepare_example(example_code_id)
-            path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
-            with open(f"{path}tmp.py", 'r') as f:
+            examples_path = os.path.join(self.path, 'examples')
+            example_file = os.path.join(examples_path, f'example{example_code_id}.py')
+            with open(example_file, 'r') as f:
                 source_code = f.read()
         
         
@@ -83,18 +79,25 @@ class StepPyStep(pdb.Pdb):
         self.request("init")
         return ret
 
-    def prepare_example(self, example_code_id):
-        path = "/home/beno/Desktop/steppystep/step-py-step/src/mysite/"
-        shutil.copyfile(f"{path}example{example_code_id}.py", f"{path}tmp.py")
-
-    def create_file(self, source_code):
-        with open(self.filename, 'w+', encoding='utf-8') as f:
-            f.write(source_code)
-
     def rs(self):
-        self._runscript(self.filename)
+        self._runscript("USERFILE.py")
         
-    
+    def _runscript(self, filename):
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({"__name__"    : "__main__",
+                                  "__file__"    : filename,
+                                  "__builtins__": __builtins__,
+                                 })
+
+        self._wait_for_mainpyfile = True
+        self.mainpyfile = self.canonic(filename)
+        self._user_requested_quit = False
+
+        statement = "exec(compile(%r, %r, 'exec'))" % \
+                        (self.source_code, self.mainpyfile)
+        self.run(statement)
+
     def kill(self):
         print("KILLL")
         self.request_q.put("exit") #ez valszeg nem kell
@@ -109,7 +112,7 @@ class StepPyStep(pdb.Pdb):
         
     def cmdloop(self, intro=None):
         import inspect, copy, re, sys
-        sys.path.insert(1, '/home/beno/Desktop/steppystep/step-py-step/src/mysite/main')
+        sys.path.insert(0, os.path.join(self.path, 'main'))
         from get_frame_data import get_pointers
         from expression_analysis import node2seq, node2treant, node2tree
         from error_handling import is_error_message
@@ -145,40 +148,25 @@ class StepPyStep(pdb.Pdb):
                 break
 
             elif msg.startswith("modify"):
-                #_, var_name, value = msg.split()
                 var_name, value = re.findall(r'modify (\w+) (.+)', msg)[0]
                 line = f"{var_name}={value}"
                 try:
                     exec(line)
-                    print("megyez")
                 except NameError:
                     value = value.replace('"', '\\"')
                     value = '"' + value + '"'
                     line = f"{var_name}={value}"
-                    print("nem megy ez")
                 line = "!" + line
                 debug("ezt próbálom", line)
                 self.onecmd(line)
                 self.request_q.put("get")
 
-            elif msg == "x":
-                self.onecmd("!x=999;y=888")
-                self.request_q.put("get")
-                #self.answer_q.put(f"xelek{lineno}")
-                '''
-                return
-                line = "!_localvars=[(k, v) for k,v in locals().items() if not k.startswith('_') and isinstance(v,int)]"
-                self.onecmd(line)
-                print("localvars", _localvars)
-                print("xxxxx", self.curframe.f_locals)
-                '''
-
             elif msg == "get":
                 ret = dict()
                 ret['error'] = None
 
-                debug("kimenet", self.sajat.getvalue().split('\n'), "eddigtart")
-                for x in self.sajat.getvalue().split('\n'):
+                debug("kimenet", self.sps_output.getvalue().split('\n'), "eddigtart")
+                for x in self.sps_output.getvalue().split('\n'):
                     if is_error_message(x):
                         ret['error'] = x
                         break
