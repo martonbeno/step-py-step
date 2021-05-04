@@ -40,11 +40,6 @@
 
 				window.open("../tree?nodeStructure=" + nodeStructure, "Tree", "height=600,width=800");
 			}
-
-			function exampleCode(example_code_id){
-				let args = { 'example_code_id': example_code_id };
-				startAnalysis(args);
-			}
 			
 			function readcode(){
 				let source_code = document.getElementById('ta').value;
@@ -137,6 +132,8 @@
 
 					addRowFunctions(DATA['localvars']);
 
+					scrollToArrow();
+
 
 					let expressionAnalysisButton = document.getElementById('expressionAnalysisButton');
 					let openTreantButton = document.getElementById('treantButton');
@@ -174,6 +171,16 @@
 					document.getElementById("exitCodeButton").style.display = "block";
 					document.getElementById('outputField').innerHTML += '\n' + DATA['error'];
 				}
+			}
+
+			function scrollToArrow(){
+				let lineno = DATA['lineno'];
+				let total_lines = SOURCE_CODE.split('\n').length;
+				let total_pixels = document.getElementById("ki").scrollHeight;
+				let visible_pixels = document.getElementById("ki").offsetHeight;
+
+				let scroll_to_pixel = total_pixels*lineno/total_lines - visible_pixels/2;
+				document.getElementById("ki").scroll(0, scroll_to_pixel);
 			}
 
 			function getFormattedCode(){
@@ -355,10 +362,6 @@
 			<textarea id="ta" name="content" class="preAnalysis" rows="15" cols="75">{{usercode}}</textarea>
 			<script type="text/javascript" src="{% static 'allowtabs.js' %}"></script>
 
-			<pre class="sh_python">
-				<p id="ki"></p>
-			</pre>
-
 		
 			<select class="preAnalysis" onchange="onSelectExample(this)">
 				<option selected value="">Select example</option>
@@ -384,17 +387,17 @@
 				function onFileUpload(x){
 					if(x.files[0].size > 1024*1024)
 						alert("Uploaded file is too big (max size is 1 MB)");
-					
 					else
 						x.form.submit();
 				}
 			</script>
 			
 			<button class="preAnalysis" onclick="readcode()">Read code</button> 
-			<button class="preAnalysis" onclick="exampleCode(1)">Example 1</button> 
-			<button class="preAnalysis" onclick="exampleCode(2)">Example 2</button> 
-			<button class="preAnalysis" onclick="exampleCode(3)">Example 3</button>
 			<br>
+
+			<pre class="sh_python duringAnalysis">
+				<p id="ki" class="duringAnalysis" style="overflow-y: scroll; height:300px;"></p>
+			</pre>
 			<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>
 			<button class="duringAnalysis" onclick="next()" style="display:none;">Next</button><br>
 			<button id="expressionAnalysisButton" onclick="analyzeExpression()" style="display:none;">Analyize Expression</button><br>
