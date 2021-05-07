@@ -21,6 +21,7 @@ def home(response):
 	# return HttpResponse("<h1>view1</h1>")
 
 def tree(request):
+	print(request.POST)
 	try:
 		nodeStructure = request.GET['nodeStructure']
 	except KeyError:

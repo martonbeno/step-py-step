@@ -32,14 +32,42 @@
 				});
 			}
 
+			//stackoverflow
+			function openWindowWithPost(url, data) {
+			    var form = document.createElement("form");
+			    form.target = "_blank";
+			    form.method = "POST";
+			    form.action = url;
+			    form.style.display = "none";
+
+			    for (var key in data) {
+			        var input = document.createElement("input");
+			        input.type = "hidden";
+			        input.name = key;
+			        input.value = data[key];
+			        form.appendChild(input);
+			    }
+
+			    document.body.appendChild(form);
+			    form.submit();
+			    document.body.removeChild(form);
+			}
+
+
 			function testButtonPressed(){
-				let nodeStructure = DATA['expr']['treant'];
-				nodeStructure = JSON.stringify(nodeStructure);
+				
+				//let nodeStructure = DATA['expr']['treant'];
+				//nodeStructure = JSON.stringify(nodeStructure);
+				nodeStructure = '{"text":{"name":"Compare","title":"","desc":"a<b"},"children":[{"text":{"name":"Name","title":2,"desc":"a"},"children":[{"text":{"name":"Load","title":""},"children":[]}]},{"text":{"name":"Eq","title":""},"children":[]},{"text":{"name":"Name","title":3,"desc":"b"},"children":[{"text":{"name":"Load","title":""},"children":[]}]}]}';
 				console.log(nodeStructure);
 				nodeStructure = encodeURIComponent(nodeStructure);
+				
 				//createTreant(nodeStructure);
 
 				window.open("../tree?nodeStructure=" + nodeStructure, "Tree", "height=600,width=800");
+				//console.log("nyitom");
+				//openWindowWithPost("../tree/", {csrfmiddlewaretoken: '{{ csrf_token }}'});
+
 			}
 			
 			function readcode(){
@@ -118,7 +146,6 @@
 			function openTreant(){
 				let nodeStructure = DATA['expr']['treant'];
 				nodeStructure = JSON.stringify(nodeStructure);
-				nodeStructure = encodeURIComponent(nodeStructure);
 				window.open("../tree?nodeStructure=" + nodeStructure, "Tree", "height=600,width=800");
 			}
 			

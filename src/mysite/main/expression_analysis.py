@@ -194,6 +194,10 @@ def tree2seq(node, start=True):
         return ret
 
 def to_html(text):
+    text = text.replace("<=", " LESSER OR EQUAL THAN ")
+    text = text.replace(">=", " GREATER OR EQUAL THAN ")
+    text = text.replace("<", " LESSER THAN ")
+    text = text.replace(">", " GREATER THAN ")
     return text.replace('\n', ';').replace('\t', '    ')
 
 def node2treant(node, code, variables):
