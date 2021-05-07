@@ -29,6 +29,7 @@ def tree(request):
 	return render(request, "main/tree.html", {'nodeStructure':nodeStructure})
 
 def create(request):
+	print("create request", request)
 	print(request.FILES)
 	usercode = ''
 	if 'usercode' in request.FILES:
@@ -40,13 +41,15 @@ def create(request):
 	examples_path = os.path.join(path, "examples")
 	example_files = sorted(os.listdir(examples_path))
 
+	print({'usercode': usercode, 'example_files': example_files})
+
 	return render(request, "main/create.html", {'usercode': usercode, 'example_files': example_files})
 
 def api(request):
 	command = request.POST['command']
 	args = json.loads(request.POST['args'])
 
-	print(command, args)
+	print("api be", command, args)
 	
 	
 	if command == "start":
@@ -71,5 +74,5 @@ def api(request):
 		ret = {'exit':'yes'}
 	
 	ret = json.dumps(ret)
-	print(ret)
+	print("api response", ret)
 	return HttpResponse(ret)

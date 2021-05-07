@@ -1,0 +1,46 @@
+body {
+margin:0;
+padding:0;
+background: url("/static/bg.jpg");
+}
+div#header {
+  width:100%;
+  height:65px;
+  position:relative;
+  z-index:100;
+  padding:10px;
+  /*background-color:#F00;*/
+} 
+
+div#content{
+/*background-color:#111;*/
+width:100%;
+height:100%;
+position:absolute;
+}
+    
+#columns-container {
+  position:relative;
+  height: 100%;
+  width: 100%;
+}
+
+.column {
+    position: absolute;
+}
+
+.column-a {
+    /*background-color: green;*/
+    top: 0;
+    bottom: 0;
+    right: 50%;
+    left: 0;
+}
+
+.column-b {
+    /*background-color: yellow;*/
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 55%;
+}

@@ -1,7 +1,8 @@
 <html>
 	<head>
 		{% load static %}
-		<link rel="stylesheet" href="{% static 'style.css' %}">
+		<!--<link rel="stylesheet" href="{% static 'style.css' %}">-->
+		<link rel="stylesheet" href="{% static 'masikstyle.css' %}">
 		<link rel="stylesheet" href="{% static 'sh_style.css' %}">
 		<link rel="stylesheet" href="{% static 'Treant.css' %}">
 		<!--<link rel="stylesheet" href="{% static 'super-simple.css' %}">-->
@@ -55,16 +56,29 @@
 					console.log(data);
 					if(data['compile_success']){
 						SOURCE_CODE = data['source_code'];
+						
 
 						let objectsToHide = document.getElementsByClassName("preAnalysis");
-						for(let i=0; i<objectsToHide.length; i++)
-							objectsToHide[i].style.display = "none";
+						for(let i=0; i<objectsToHide.length; i++){
+							//objectsToHide[i].style.display = "none";
+							objectsToHide[i].style.visibility = "hidden";
+							objectsToHide[i].style.maxHeight = "0px";
+
+						}
 						let objectsToShow = document.getElementsByClassName("duringAnalysis");
-						for(let i=0; i<objectsToShow.length; i++)
-							objectsToShow[i].style.display = "block";
+						for(let i=0; i<objectsToShow.length; i++){
+							//objectsToShow[i].style.display = "block";
+							objectsToShow[i].style.visibility = "visible";
+							objectsToShow[i].style.maxHeight = "none";
+						}
+
 
 						let formattedCode = getFormattedCode();
-						document.getElementById('ki').innerHTML = formattedCode;
+						let ki = document.getElementById('ki');
+						ki.innerHTML = formattedCode;
+						ki.style.height = "300px";
+
+
 						sh_highlightDocument();
 					}
 					else{
@@ -140,25 +154,44 @@
 					let expressionAnalysisField = document.getElementById('expressionAnalysisField');
 					//ha el lehet indítani az expression anaylsis-t, de még nem indítottuk el
 					if(DATA['expr'] !== null && EXPRESSION_ANALYSIS_IT === null){
-						expressionAnalysisButton.style.display = "block";
+						//expressionAnalysisButton.style.display = "block";
+						expressionAnalysisButton.style.visibility = "visible";
+						expressionAnalysisButton.style.maxHeight = "none";
 					}
 
 					//ha már megy
 					else if(EXPRESSION_ANALYSIS_IT !== null &&
 						DATA['expr'] !== null &&
 						EXPRESSION_ANALYSIS_IT < DATA['expr']['sequence'].length){
-						expressionAnalysisButton.style.display = "none";
-						expressionAnalysisField.style.display = "block";
-						openTreantButton.style.display = "block";
+						//expressionAnalysisButton.style.display = "none";
+						expressionAnalysisButton.style.visibility = "hidden";
+						expressionAnalysisButton.style.maxHeight = "0px";
+
+						//expressionAnalysisField.style.display = "block";
+						expressionAnalysisField.style.visibility = "visible";
+						expressionAnalysisField.style.maxHeight = "none";
+
+						//openTreantButton.style.display = "block";
+						openTreantButton.style.visibility = "visible";
+						openTreantButton.style.maxHeight = "none";
 
 						expressionAnalysisField.innerHTML = DATA['expr']['sequence'][EXPRESSION_ANALYSIS_IT];
 					}
 
 					//ha nincs expression analysis
 					else{
-						expressionAnalysisButton.style.display = "none";
-						expressionAnalysisField.style.display = "none";
-						openTreantButton.style.display = "none";
+						//expressionAnalysisButton.style.display = "none";
+						expressionAnalysisButton.style.visibility = "hidden";
+						expressionAnalysisButton.style.maxHeight = "0px";
+
+
+						//expressionAnalysisField.style.display = "none";
+						expressionAnalysisField.style.visibility = "hidden";
+						expressionAnalysisField.style.maxHeight = "0px";
+
+						//openTreantButton.style.display = "none";
+						openTreantButton.style.visibility = "hidden";
+						openTreantButton.style.maxHeight = "0px";
 						EXPRESSION_ANALYSIS_IT = null;
 					}
 				}
@@ -166,9 +199,14 @@
 				//runtime error on user's code
 				else{
 					let objectsToHide = document.getElementsByClassName("duringAnalysis");
-					for(let i=0; i<objectsToHide.length; i++)
-						objectsToHide[i].style.display = "none";
-					document.getElementById("exitCodeButton").style.display = "block";
+					for(let i=0; i<objectsToHide.length; i++){
+						//objectsToHide[i].style.display = "none";
+						objectsToHide[i].style.visibility = "hidden";
+						objectsToHide[i].style.maxHeight = "0px";
+					}
+					//document.getElementById("exitCodeButton").style.display = "block";
+					document.getElementById("exitCodeButton").style.visibility = "visible";
+					document.getElementById("exitCodeButton").style.maxHeight = "none";
 					document.getElementById('outputField').innerHTML += '\n' + DATA['error'];
 				}
 			}
@@ -357,63 +395,89 @@
 		</script>
 	</head>
 	<body>
-		<div class="split left">
+		<div id="container">
+			<div id="header">
+				<img src="/static/banner.png" alt="Step-py-Step banner" style="width:400px">
+			</div>
 
-			<textarea id="ta" name="content" class="preAnalysis" rows="15" cols="75">{{usercode}}</textarea>
-			<script type="text/javascript" src="{% static 'allowtabs.js' %}"></script>
+			<div id="content">
+				<div id="columns-container">
+					<div class="column column-a">
 
-		
-			<select class="preAnalysis" onchange="onSelectExample(this)">
-				<option selected value="">Select example</option>
-			{% for example_file in example_files %}
-				<option value="{{example_file}}">{{example_file}}</option>
-			{% endfor %}
-			</select><br><br>
-			<script>
-				function onSelectExample(x){
-					let filename = x.selectedOptions[0].value;
-					if(filename){
-						let args = { 'example_file_name': filename };
-						startAnalysis(args);
-					}
-				}
-			</script>
+						<textarea id="ta" name="content" class="preAnalysis" rows="15" cols="75">{{usercode}}</textarea>
+						<script type="text/javascript" src="{% static 'allowtabs.js' %}"></script>
 
-			<form method="post" enctype="multipart/form-data">
-				{% csrf_token %}
-				<input class="preAnalysis" type="file" name="usercode" onchange="onFileUpload(this)">
-			</form>
-			<script>
-				function onFileUpload(x){
-					if(x.files[0].size > 1024*1024)
-						alert("Uploaded file is too big (max size is 1 MB)");
-					else
-						x.form.submit();
-				}
-			</script>
-			
-			<button class="preAnalysis" onclick="readcode()">Read code</button> 
-			<br>
+					
+						<div class="preAnalysis">
+							<select class="preAnalysis" onchange="onSelectExample(this)">
+								<option selected value="">Select example</option>
+							{% for example_file in example_files %}
+								<option value="{{example_file}}">{{example_file}}</option>
+							{% endfor %}
+							</select><br><br>
+							<script>
+								function onSelectExample(x){
+									let filename = x.selectedOptions[0].value;
+									if(filename){
+										let args = { 'example_file_name': filename };
+										startAnalysis(args);
+									}
+								}
+							</script>
 
-			<pre class="sh_python duringAnalysis">
-				<p id="ki" class="duringAnalysis" style="overflow-y: scroll; height:300px;"></p>
-			</pre>
-			<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>
-			<button class="duringAnalysis" onclick="next()" style="display:none;">Next</button><br>
-			<button id="expressionAnalysisButton" onclick="analyzeExpression()" style="display:none;">Analyize Expression</button><br>
-			<button id="treantButton" onclick="openTreant()" style="display:none;">Abstract Syntax Tree</button><br>
-			<button id="exitCodeButton" class="duringAnalysis" onclick="exit_code()" style="display:none;">Exit code</button><br>
-			<button onclick="testButtonPressed()">Teszt</button>
-			<pre>
-				<p>---Output---</p>
-				<p id="outputField"></p>
-			</pre>
-		</div>
-		<div class="split right">
-			<pre>
-				<p id="expressionAnalysisField"></p>
-				<p id="variables"></p>
-			</pre>
+							<form method="post" enctype="multipart/form-data">
+								{% csrf_token %}
+								<input class="preAnalysis" type="file" name="usercode" onchange="onFileUpload(this)">
+							</form>
+							<script>
+								function onFileUpload(x){
+									if(x.files[0].size > 1024*1024)
+										alert("Uploaded file is too big (max size is 1 MB)");
+									else
+										x.form.submit();
+								}
+							</script>
+							
+							<button class="preAnalysis" onclick="readcode()">Read code</button> 
+							<br>
+						</div>
+
+						<pre class="sh_python duringAnalysis">
+							<p id="ki" class="duringAnalysis" style="overflow-y: scroll; height:0px; visibility: hidden"></p>
+						</pre>
+						<!--<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>-->
+						<div class="duringAnalysis">
+							<button class="duringAnalysis" onclick="step()" style="visibility:hidden;max-height:0px;">Step</button><br><br>
+							<button class="duringAnalysis" onclick="next()" style="visibility:hidden;max-height:0px;">Next</button><br>
+						</div>
+						<div id="expressionAnalysisButton" class="duringExpressionAnalysis" style="visibility:hidden;max-height:0px;">
+							<button onclick="analyzeExpression()">Analyize Expression</button><br>
+						</div>
+						<div id="treantButton" class="duringExpressionAnalysis" style="visibility:hidden;max-height:0px;">
+							<button onclick="openTreant()">Abstract Syntax Tree</button><br>
+						</div>
+						<div id="duringAnalysis">
+							<br>
+							<button id="exitCodeButton" class="duringAnalysis" onclick="exit_code()" style="visibility:hidden;max-height:0px;">Exit code</button><br>
+						</div>
+						<button onclick="testButtonPressed()">Teszt</button><br>
+						<pre class="duringAnalysis sh_python" style="visibility: hidden; max-height: 0px;">
+							<p>---Output---</p>
+							<p id="outputField" style="overflow-y: scroll; height:300px;"></p>
+							<!--<textarea id="outputField"></textarea>-->
+						</pre>
+					</div>
+					<div class="column column-b">
+						<pre>
+							<p id="expressionAnalysisField"></p>
+							<p id="variables"></p>
+						</pre>
+					</div>
+				</div>
+			</div>
+			<div id="footer">
+				<p>Footer</p>
+			</div>
 		</div>
 	</body>
 </html>

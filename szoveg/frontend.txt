@@ -1,0 +1,83 @@
+views.py
+	create(request):
+		rendereli a create.html-t
+			ezekkel a paraméterekkel:
+				-usercode: ha feltöltött a felhasználó egy fájlt, akkor annak a string-je, egyébként üres string
+				-example_files: lista a példakódokat tartalmazó mappában lévő fájlok nevei
+
+create.html:
+
+	textfield:
+		bemeneti mező, a felhasználó ide írhatja a kódját,
+		alapértelmezetten a felhasználó által feltöltött kódot tartalmazza, vagy ha nem töltött fel, akkor üres
+		látható: pre-analysis
+
+	select example:
+		a paraméterben kapott example fájlokról egy <select> lista
+		ráklikkelve lenyílik a lista
+
+		az api-n keresztül start üzenetet küld a StepPyStep példánynak, paraméterként adva a kiválsztott példa kód nevét
+
+		látható: pre-analysis
+
+	browse:
+		egy html fájl input mező
+		rákattintva felugrik egy ablak, ahol a felhasználó kiválaszthat a saját eszközéről egy fájlt
+		a fájl kiválasztását követően
+			-a program először ellenőrzi a fájl méretét
+				-ha az 1 megabájtnál nagyobb, figyelmezteti a felhasználót
+				-egyébként újra hívja a create_html-t, paraméterként küldve a felhasználó által feltöltött fájlt
+		látható: pre-analysis
+
+	read code:
+		az api-n keresztül start üzenetet küld a StepPyStep példánynak, paraméterként adva a textfieldben írt szöveg stringjét
+		látható: pre-analysis
+
+	ki:
+		a betöltött kódot tartalmazza, szintaxis-kiemeléssel, amit egy neten talált sh_style javascript-css modullal valósítok meg
+		a kódon belül nyíl mutatja, hogy éppen melyik sornál tart az elemzés
+		látható: during-analysis
+
+	step:
+		-ha expression elemzése van folyamatban, lépteti azt
+		-egyébként "step" üzenetet küld az api-nak
+		-látható: during-analysis
+
+	next:
+		-ha expression elemzése van folyamatban, átugorja azt
+		-egyébként "next" üzenetet küld az api-nak
+		-látható: during-analysis
+
+	analyze expression:
+		-elindítja az aktuális sorban lévő expression analysist
+		-látható: during-analysis, azon belül, ha az aktuális sorban expression található
+
+	abstract syntax tree:
+		-új ablakban megnyitja a tree.html fájlt, paraméternek adva az abstract szintaxis fa kirajzolásához szükséges json fát
+		-látható: during-analysis, azon belül expression analysis
+
+	exit code:
+		exit üzenetet küld a StepPyStep osztály példányának
+		-látható: during-analysis
+
+	output field:
+		-egy nemszerkeszthető szövegmező, itt látja a felhasználó az általa feltöltött szkript standard output-jára írt szöveget
+		-látható: during-analysis
+
+	expression analysis field:
+		-itt láthatja a felhasználó az aktuális sorban lévő expression feldolgozásának aktuális állapotát
+		-látható: during-analysis, azon belül expression analysis
+
+	variables:
+		-táblázat a változók aktuális állapotáról, 3 oszloppal
+			1: változó neve
+			2: változó típusa
+			3: változó értéke
+		-ha a változó értéke egy adatszerkezet (lista, dictionary, halmaz vagy felhasználó által definiált osztály), akkor a 3. cella egy újabb táblázatot tartalmaz. A cellában lévő táblázat 3. oszlopában szintén lehet újabb táblázat, és így tovább, rekurzívan.
+		-egy sor hátterének színe fehér, ha a változó lokális
+		-egy sor hátterének színe szürke, ha a változó nem lokális
+		-ha egy lokális változó sorára kattintunk, annak módosíthatjuk az értékét
+		-ha egy változó referencia egy korábban defininiált változóra, akkor érték helyett "reference" felirat áll, ha ilyen változóra felett van a kurzur, akkor jelzi az oldal, hogy mely változó(k)ra vonatkozik a referencia. Ha egy eredeti változó során tartjuk a kurzort, akkor az arra vonatkozó referenciák kerülnek kiemelésre.
+		
+
+
