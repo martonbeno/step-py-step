@@ -56,7 +56,9 @@ def api(request):
 	if command == "start":
 		global SPS_MODEL
 		SPS_MODEL = StepPyStep()
-		ret = SPS_MODEL.start(**args)
+		start_answer = SPS_MODEL.start(**args)
+		get_answer = SPS_MODEL.request("get")
+		ret = {**start_answer, **get_answer}
 	
 	elif command == "step":
 		SPS_MODEL.request("step")
