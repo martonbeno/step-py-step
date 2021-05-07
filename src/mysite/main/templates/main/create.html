@@ -112,7 +112,7 @@
 						let openTreantButton = document.getElementById('treantButton');
 						let expressionAnalysisField = document.getElementById('expressionAnalysisField');
 
-						
+
 						setData(JSON.stringify(data));
 
 
@@ -299,20 +299,31 @@
 					}
 
 					ret += '<tr ';
-					ret += 'class="pointer_' + v['pointer'] + '" ';
-					ret += 'style="background-color:' + backgroundColor + '">';
-					//ret += '<tr>';
+					ret += 'class="pointer_' + v['pointer'];
+					//ret += 'style="background-color:' + backgroundColor + '">';
+					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
+					ret += '">';
 					ret += "<td>" + v['name'] + "</td>";
 					//if(! v['is_udt']){
 					if(! v['is_container']){
 						
 						if(! v['defined_elsewhere']){
 							ret += "<td>" + v['type'] + "</td>";
-							ret += "<td>" + v['value'] + "</td>";
+
+							let value;
+							if(v['value'] === true)
+								value = 'True';
+							else if(v['value'] === false)
+								value = 'False';
+							else if(v['value'] === null)
+								value = 'None';
+							else
+								value = v['value'];
+							ret += "<td>" + value + "</td>";
 						}
 						else{
 							ret += "<td></td>";
-							ret += "<td>máshol definiált</td>";
+							ret += "<td>( reference )</td>";
 						}
 
 					}
@@ -362,7 +373,9 @@
 							for(let j=0; j<elementsToHighlight.length; j++){
 								if(objArr[i] == elementsToHighlight[j])
 									continue;
-								elementsToHighlight[j].style.backgroundColor = "#FFFF00";
+								//elementsToHighlight[j].style.backgroundColor = "#FFFF00";
+								elementsToHighlight[j].classList.add('highlighted-var');
+								console.log("hozzáadom");
 							}
 						}
 
@@ -370,7 +383,8 @@
 						function mouseLeave(event){
 							let elementsToHighlight = document.getElementsByClassName(className);
 							for(let j=0; j<elementsToHighlight.length; j++){
-								elementsToHighlight[j].style.backgroundColor = "#FFFFFF";
+								//elementsToHighlight[j].style.backgroundColor = "#FFFFFF";
+								elementsToHighlight[j].classList.remove('highlighted-var');
 							}
 						}
 
@@ -384,13 +398,17 @@
 							while(row.nodeName != "TR")
 								row = row.parentElement;
 
+							if(row.classList.contains('nonlocal-var'))
+								return;
+
 							let leftCell = row.childNodes[0];
 							let rightCell = row.childNodes[row.childNodes.length-1];
 
 							let changeFrom = rightCell.innerHTML;
-							rightCell.innerHTML = "változás szele";
+							let isDataStructure = rightCell.innerText !== rightCell.innerHTML;
+							//rightCell.innerHTML = "változás szele";
 							let inputField = document.createElement("INPUT");
-							inputField.value = changeFrom;
+							inputField.value = isDataStructure ? '' : changeFrom;
 							rightCell.innerHTML = "";
 							rightCell.appendChild(inputField);
 
@@ -413,15 +431,15 @@
 
 								}
 								else if(event2.keyCode === 27){ //ESCAPE
+									IS_MODIFYING = false;
 									rightCell.innerHTML = changeFrom;
 									rightCell.removeChild(self);
-									IS_MODIFYING = false;
 								}
 							});
 						}
 
-						//objArr[i].addEventListener("mouseover", mouseEnter);
-						//objArr[i].addEventListener("mouseleave", mouseLeave);
+						objArr[i].addEventListener("mouseover", mouseEnter);
+						objArr[i].addEventListener("mouseleave", mouseLeave);
 						objArr[i].addEventListener("click", mouseClick);
 					}
 				}

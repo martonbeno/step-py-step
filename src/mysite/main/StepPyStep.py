@@ -159,14 +159,28 @@ class StepPyStep(pdb.Pdb):
                 break
 
             elif msg.startswith("modify"):
-                var_name, value = re.findall(r'modify (\w+) (.+)', msg)[0]
+                try:
+                    var_name, value = re.findall(r'modify (\w+) (.+)', msg)[0]
+                except Exception:
+                    debug("nem érvényes értékadás")
+                    self.request_q.put("get")
+                    break
+
                 line = f"{var_name}={value}"
                 try:
                     exec(line)
-                except NameError:
+                except Exception:
                     value = value.replace('"', '\\"')
                     value = '"' + value + '"'
                     line = f"{var_name}={value}"
+
+                try:
+                    exec(line)
+                except Exception:
+                    debug("nem érvényes értékadás")
+                    self.request_q.put("get")
+                    break
+
                 line = "!" + line
                 debug("ezt próbálom", line)
                 self.onecmd(line)

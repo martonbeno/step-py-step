@@ -44,3 +44,15 @@ position:absolute;
     right: 0;
     left: 55%;
 }
+
+.local-var{
+  background-color: #ffffff;
+}
+
+.nonlocal-var{
+  background-color: #888888;
+}
+
+.highlighted-var{
+  background-color: #ffff00 !important;
+}
