@@ -32,27 +32,6 @@
 				});
 			}
 
-			//stackoverflow
-			function openWindowWithPost(url, data) {
-			    var form = document.createElement("form");
-			    form.target = "_blank";
-			    form.method = "POST";
-			    form.action = url;
-			    form.style.display = "none";
-
-			    for (var key in data) {
-			        var input = document.createElement("input");
-			        input.type = "hidden";
-			        input.name = key;
-			        input.value = data[key];
-			        form.appendChild(input);
-			    }
-
-			    document.body.appendChild(form);
-			    form.submit();
-			    document.body.removeChild(form);
-			}
-
 
 			function testButtonPressed(){
 				
@@ -105,6 +84,8 @@
 						let ki = document.getElementById('ki');
 						ki.innerHTML = formattedCode;
 						ki.style.height = "300px";
+						let outputField = document.getElementById('outputField');
+						outputField.height = "100px";
 
 
 
@@ -478,7 +459,7 @@
 
 		</script>
 	</head>
-	<body>
+	<body onload="document.getElementById('selectExample').selectedIndex=0;">
 		<div id="container">
 			<div id="header">
 				<img src="/static/banner.png" alt="Step-py-Step banner" style="width:400px">
@@ -493,7 +474,7 @@
 
 					
 						<div class="preAnalysis">
-							<select class="preAnalysis" onchange="onSelectExample(this)">
+							<select id="selectExample" class="preAnalysis" onchange="onSelectExample(this)">
 								<option selected value="">Select example</option>
 							{% for example_file in example_files %}
 								<option value="{{example_file}}">{{example_file}}</option>
@@ -549,7 +530,7 @@
 						<br>
 						<pre class="duringAnalysis duringError sh_python" style="visibility: hidden; max-height: 0px;">
 							<p>---Output---</p>
-							<p id="outputField" style="overflow-y: scroll; height:300px;"></p>
+							<p id="outputField" style="overflow-y: scroll;"></p>
 							<!--<textarea id="outputField"></textarea>-->
 						</pre>
 					</div>
