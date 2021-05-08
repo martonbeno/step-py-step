@@ -61,12 +61,10 @@ def api(request):
 		ret = {**start_answer, **get_answer}
 	
 	elif command == "step":
-		SPS_MODEL.request("step")
-		ret = SPS_MODEL.request("get")
+		ret = SPS_MODEL.request("step")
 
 	elif command == "next":
-		SPS_MODEL.request("next")
-		ret = SPS_MODEL.request("get")
+		ret = SPS_MODEL.request("next")
 
 	elif command == "modify":
 		msg = f"modify {args['var_name']} {args['value']}"

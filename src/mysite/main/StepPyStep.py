@@ -8,6 +8,7 @@ import ast
 import os
 import datetime
 from io import StringIO
+import inspect
 
 try:
     from .expression_analysis import get_exprs, is_importing_node
@@ -87,7 +88,14 @@ class StepPyStep(pdb.Pdb):
         return ret
 
     def rs(self):
-        self._runscript("kamu.py")
+        user_codes_dir = os.path.join(self.path, 'usercodes')
+        filename = generate_filename()
+        self.filename_with_path = os.path.join(user_codes_dir, filename)
+        
+        with open(self.filename_with_path, 'w+', encoding='utf-8') as f:
+            f.write(self.source_code)
+
+        self._runscript(self.filename_with_path)
     
     def _runscript(self, filename):
         import __main__
@@ -133,12 +141,19 @@ class StepPyStep(pdb.Pdb):
         while True:
 
             msg = self.request_q.get()
-            
+
             if msg == "exit":
                 print("EXIT üzi")
                 self.onecmd("exit")
                 self.answer_q.put("exit")
                 return
+
+            elif not self.is_still_in_user_code(self.curframe):
+                print("ittttttttTTTTTT")
+                ret = self.lastget
+                ret['isover'] = True
+                print(ret)
+                self.answer_q.put(ret)
 
             elif msg == "init":
                 self.onecmd("ORIGINAL_PRINT=print")
@@ -154,7 +169,8 @@ class StepPyStep(pdb.Pdb):
                 break
 
             elif msg == "next":
-                self.onecmd("next")
+                if self.is_still_in_user_code(self.curframe):
+                    self.onecmd("next")
                 self.request_q.put("get")
                 break
 
@@ -188,9 +204,12 @@ class StepPyStep(pdb.Pdb):
 
             elif msg == "get":
                 ret = dict()
+                ret['isover'] = False
                 ret['error'] = None
 
                 debug("kimenet", self.sps_output.getvalue().split('\n'), "eddigtart")
+
+
                 for x in self.sps_output.getvalue().split('\n'):
                     if is_error_message(x):
                         ret['error'] = x
@@ -222,6 +241,7 @@ class StepPyStep(pdb.Pdb):
                 if function in ["STEP_PY_STEP_OUTPUT", "STEP_PY_STEP_PRINT"] or filename_with_path == "<stdin>":
                     self.request_q.put("step")
                 else:
+                    self.lastget = ret
                     self.answer_q.put(ret)
             
             
@@ -229,6 +249,21 @@ class StepPyStep(pdb.Pdb):
                 print("elírtad")
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
                 self.answer_q.put(lineno)
+
+
+    def is_still_in_user_code(self, frame):
+        f = frame
+        while f:
+            filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(f)
+            if filename_with_path == self.filename_with_path:
+                print("MEGY MÉG NYUGI")
+                return True
+            else:
+                print("nem az...")
+            f = f.f_back
+
+        print("végevégevégevége"*22)
+        return False
 
         
 if __name__ == "__main__":

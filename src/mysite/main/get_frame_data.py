@@ -72,6 +72,9 @@ class Var:
 			if self.type in (int, float, complex, bool, str, type(None), type):
 				self.is_udt = False
 
+			if inspect.isfunction(self.data):
+				self.is_udt = False
+
 			elif inspect.ismodule(self.type):
 				self.is_udt = False
 

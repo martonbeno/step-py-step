@@ -174,7 +174,7 @@
 				if(data !== null)
 					DATA = JSON.parse(data);
 
-				if(DATA['error'] === null){
+				if(DATA['error'] === null && DATA['isover'] === false){
 
 					let formattedCode = getFormattedCode();
 					document.getElementById('ki').innerHTML = formattedCode;
@@ -234,18 +234,26 @@
 					}
 				}
 
-				//runtime error on user's code
+				//runtime error on user's code or code is over
 				else{
 					let objectsToHide = document.getElementsByClassName("duringAnalysis");
 					for(let i=0; i<objectsToHide.length; i++){
-						//objectsToHide[i].style.display = "none";
+						if(objectsToHide[i].classList.contains("duringError"))
+							continue;
 						objectsToHide[i].style.visibility = "hidden";
 						objectsToHide[i].style.maxHeight = "0px";
 					}
 					//document.getElementById("exitCodeButton").style.display = "block";
 					document.getElementById("exitCodeButton").style.visibility = "visible";
 					document.getElementById("exitCodeButton").style.maxHeight = "none";
-					document.getElementById('outputField').innerHTML += '\n' + DATA['error'];
+					document.getElementById('ki').style.visibility = "visible";
+					document.getElementById('ki').style.maxHeight = "none";
+
+					if(DATA['error'] !== null){
+						document.getElementById('outputField').style.visibility = "visible";
+						document.getElementById('outputField').style.maxHeight = "none";
+						document.getElementById('outputField').innerHTML += '\n' + DATA['error'];
+					}
 				}
 			}
 
@@ -304,7 +312,7 @@
 					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
 					ret += '">';
 					ret += "<td>" + v['name'] + "</td>";
-					//if(! v['is_udt']){
+					
 					if(! v['is_container']){
 						
 						if(! v['defined_elsewhere']){
@@ -319,7 +327,7 @@
 								value = 'None';
 							else
 								value = v['value'];
-							ret += "<td>" + value + "</td>";
+							ret += '<td style="white-space: pre-wrap">' + value + "</td>";
 						}
 						else{
 							ret += "<td></td>";
@@ -498,8 +506,8 @@
 							<br>
 						</div>
 
-						<pre class="sh_python duringAnalysis">
-							<p id="ki" class="duringAnalysis" style="overflow-y: scroll; height:0px; visibility: hidden"></p>
+						<pre class="sh_python duringAnalysis duringError">
+							<p id="ki" class="duringAnalysis duringError" style="overflow-y: scroll; height:0px; visibility: hidden"></p>
 						</pre>
 						<!--<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>-->
 						<div class="duringAnalysis">
@@ -512,12 +520,12 @@
 						<div id="treantButton" class="duringExpressionAnalysis" style="visibility:hidden;max-height:0px;">
 							<button onclick="openTreant()">Abstract Syntax Tree</button><br>
 						</div>
-						<div id="duringAnalysis">
+						<div id="duringAnalysis duringError">
 							<br>
 							<button id="exitCodeButton" class="duringAnalysis" onclick="exit_code()" style="visibility:hidden;max-height:0px;">Exit code</button><br>
 						</div>
 						<button onclick="testButtonPressed()">Teszt</button><br>
-						<pre class="duringAnalysis sh_python" style="visibility: hidden; max-height: 0px;">
+						<pre class="duringAnalysis duringError sh_python" style="visibility: hidden; max-height: 0px;">
 							<p>---Output---</p>
 							<p id="outputField" style="overflow-y: scroll; height:300px;"></p>
 							<!--<textarea id="outputField"></textarea>-->
