@@ -25,7 +25,7 @@ def generate_filename():
 
 class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
-        print("létrejövök")
+        #print("létrejövök")
 
         self.request_q = multiprocessing.Queue()
         self.answer_q = multiprocessing.Queue()
@@ -36,7 +36,7 @@ class StepPyStep(pdb.Pdb):
         self.path = os.path.dirname(self.path) #...../mysite/main/
         self.path = os.path.dirname(self.path) #...../mysite/
         self.filename = None
-        print(self.get_example_files())
+        #print(self.get_example_files())
 
         super().__init__(**kwargs)
     
@@ -118,7 +118,7 @@ class StepPyStep(pdb.Pdb):
         return sorted(os.listdir(examples_path))
 
     def kill(self):
-        print("KILLL")
+        #print("KILLL")
         self.request_q.put("exit") #ez valszeg nem kell
         self.p.join()
     
@@ -143,22 +143,23 @@ class StepPyStep(pdb.Pdb):
             msg = self.request_q.get()
 
             if msg == "exit":
-                print("EXIT üzi")
+                #print("EXIT üzi")
                 self.onecmd("exit")
                 self.answer_q.put("exit")
                 return
 
             elif not self.is_still_in_user_code(self.curframe):
-                print("ittttttttTTTTTT")
+                #print("ittttttttTTTTTT")
                 ret = self.lastget
                 ret['isover'] = True
-                print(ret)
+                #print(ret)
                 self.answer_q.put(ret)
 
             elif msg == "init":
                 self.onecmd("ORIGINAL_PRINT=print")
                 self.onecmd("!STEP_PY_STEP_OUTPUT=''")
-                self.onecmd("!def STEP_PY_STEP_PRINT(*args, sep=' ', end='\\n', file=None, flush=False):global STEP_PY_STEP_OUTPUT;STEP_PY_STEP_OUTPUT+=sep.join([str(x) for x in args])+end;ORIGINAL_PRINT(*args, sep, end, file, flush)")
+                #self.onecmd("!def STEP_PY_STEP_PRINT(*args, sep=' ', end='\\n', file=None, flush=False):global STEP_PY_STEP_OUTPUT;STEP_PY_STEP_OUTPUT+=sep.join([str(x) for x in args])+end;ORIGINAL_PRINT(*args, sep, end, file, flush)")
+                self.onecmd("!def STEP_PY_STEP_PRINT(*args, sep=' ', end='\\n', file=None, flush=False):global STEP_PY_STEP_OUTPUT;STEP_PY_STEP_OUTPUT+=sep.join([str(x) for x in args])+end")
                 self.onecmd("!print=STEP_PY_STEP_PRINT")
                 self.answer_q.put("init")
 
@@ -198,7 +199,7 @@ class StepPyStep(pdb.Pdb):
                     break
 
                 line = "!" + line
-                debug("ezt próbálom", line)
+                #debug("ezt próbálom", line)
                 self.onecmd(line)
                 self.request_q.put("get")
 
@@ -207,7 +208,7 @@ class StepPyStep(pdb.Pdb):
                 ret['isover'] = False
                 ret['error'] = None
 
-                debug("kimenet", self.sps_output.getvalue().split('\n'), "eddigtart")
+                #debug("kimenet", self.sps_output.getvalue().split('\n'), "eddigtart")
 
 
                 for x in self.sps_output.getvalue().split('\n'):
@@ -256,13 +257,13 @@ class StepPyStep(pdb.Pdb):
         while f:
             filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(f)
             if filename_with_path == self.filename_with_path:
-                print("MEGY MÉG NYUGI")
+                #print("MEGY MÉG NYUGI")
                 return True
-            else:
-                print("nem az...")
+            #else:
+            #    print("nem az...")
             f = f.f_back
 
-        print("végevégevégevége"*22)
+        #print("végevégevégevége"*22)
         return False
 
         

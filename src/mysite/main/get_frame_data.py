@@ -58,7 +58,7 @@ class Var:
 	#process self and add unprocessed children
 	def process(self, allocated_pointers):
 		if self.pointer in allocated_pointers:
-			print("már le vagyok foglalva")
+			#print("már le vagyok foglalva")
 			self.defined_elsewhere = True
 		
 		else:
@@ -116,7 +116,8 @@ class Var:
 						child = Var(child_pointer, k)
 						self.children.append(child)
 				except AttributeError:
-					print("nincs dict-je ennek:", self.type)
+					pass
+					#print("nincs dict-je ennek:", self.type)
 
 		self.is_processed = True
 		return self.children

@@ -134,7 +134,7 @@ def node2tree(node, kod_mtx, variables, skip_eval=False):
 
 def tree2seq(node, start=True):
     if start:
-        print(node)
+        #print(node)
         #deleting duplicates
         lst = tree2seq(node, False)
         ret = [lst[0]]
