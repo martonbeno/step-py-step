@@ -151,6 +151,25 @@
 			
 			function analyzeExpression(){
 				EXPRESSION_ANALYSIS_IT = 0;
+
+				let expressionAnalysisSpan = document.getElementById('expressionAnalysisSpan');
+				//expressionAnalysisField.style.width = 50;
+				expressionAnalysisSpan.innerHTML = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+				console.log(expressionAnalysisSpan.clientWidth);
+				let seq = DATA['expr']['sequence'];
+				let maxWidth = 0;
+				let actWidth;
+				for(let i=0; i<seq.length; i++){
+					expressionAnalysisSpan.innerHTML = seq[i];
+					actWidth = expressionAnalysisSpan.clientWidth;
+					console.log(actWidth);
+					if(actWidth > maxWidth)
+						maxWidth = actWidth
+				}
+				console.log(maxWidth);
+				document.getElementById('expressionAnalysisField').style.width = 1*maxWidth;
+				document.getElementById('expressionAnalysisField').style.height = "50px";
+
 				setData(null);
 			}
 
@@ -190,6 +209,7 @@
 					let expressionAnalysisButton = document.getElementById('expressionAnalysisButton');
 					let openTreantButton = document.getElementById('treantButton');
 					let expressionAnalysisField = document.getElementById('expressionAnalysisField');
+					let expressionAnalysisSpan = document.getElementById('expressionAnalysisSpan');
 					//ha el lehet indítani az expression anaylsis-t, de még nem indítottuk el
 					if(DATA['expr'] !== null && EXPRESSION_ANALYSIS_IT === null){
 						//expressionAnalysisButton.style.display = "block";
@@ -213,7 +233,7 @@
 						openTreantButton.style.visibility = "visible";
 						openTreantButton.style.maxHeight = "none";
 
-						expressionAnalysisField.innerHTML = DATA['expr']['sequence'][EXPRESSION_ANALYSIS_IT];
+						expressionAnalysisSpan.innerHTML = DATA['expr']['sequence'][EXPRESSION_ANALYSIS_IT];
 					}
 
 					//ha nincs expression analysis
@@ -478,7 +498,7 @@
 							{% for example_file in example_files %}
 								<option value="{{example_file}}">{{example_file}}</option>
 							{% endfor %}
-							</select><br><br>
+							</select><br>
 							<script>
 								function onSelectExample(x){
 									let filename = x.selectedOptions[0].value;
@@ -511,20 +531,22 @@
 						</pre>
 						<!--<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>-->
 						<div class="duringAnalysis">
-							<button class="duringAnalysis" onclick="step()" style="visibility:hidden;max-height:0px;">Step</button><br><br>
-							<button class="duringAnalysis" onclick="next()" style="visibility:hidden;max-height:0px;">Next</button><br>
+							<button class="duringAnalysis button" onclick="step()" style="visibility:hidden;max-height:0px;">Step</button><br>
+							<button class="duringAnalysis button" onclick="next()" style="visibility:hidden;max-height:0px;">Next</button><br>
 						</div>
 						<div id="expressionAnalysisButton" class="duringExpressionAnalysis" style="visibility:hidden;max-height:0px;">
-							<button onclick="analyzeExpression()">Analyize Expression</button><br>
+							<button onclick="analyzeExpression()" class="button">Analyize Expression</button><br>
 						</div>
 						<div id="treantButton" class="duringExpressionAnalysis" style="visibility:hidden;max-height:0px;">
-							<button onclick="openTreant()">Abstract Syntax Tree</button><br>
+							<button onclick="openTreant()" class="button">Abstract Syntax Tree</button>
+							<br>
 						</div>
 						<div id="duringAnalysis duringError">
+							<button id="exitCodeButton" class="duringAnalysis" onclick="exit_code()" style="visibility:hidden;max-height:0px;">Exit code</button>
 							<br>
-							<button id="exitCodeButton" class="duringAnalysis" onclick="exit_code()" style="visibility:hidden;max-height:0px;">Exit code</button><br>
 						</div>
-						<button onclick="testButtonPressed()">Teszt</button><br>
+						<button onclick="testButtonPressed()">Teszt</button>
+						<br>
 						<pre class="duringAnalysis duringError sh_python" style="visibility: hidden; max-height: 0px;">
 							<p>---Output---</p>
 							<p id="outputField" style="overflow-y: scroll; height:300px;"></p>
@@ -532,8 +554,15 @@
 						</pre>
 					</div>
 					<div class="column column-b">
+						<pre style="
+									visibility:hidden;
+									max-height:0px;
+									padding:10px;"
+									class="duringExpressionAnalysis sh_python" id="expressionAnalysisField">
+							<span	id="expressionAnalysisSpan"
+									style="float:left;"></span>
+						</pre>
 						<pre>
-							<p id="expressionAnalysisField"></p>
 							<p id="variables"></p>
 						</pre>
 					</div>

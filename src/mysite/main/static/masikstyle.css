@@ -25,6 +25,11 @@ position:absolute;
   width: 100%;
 }
 
+
+button, input {
+  margin: 10px;
+}
+
 .column {
     position: absolute;
 }

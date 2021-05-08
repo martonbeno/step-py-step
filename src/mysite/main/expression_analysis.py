@@ -198,6 +198,7 @@ def to_html(text):
     text = text.replace(">=", " GREATER OR EQUAL THAN ")
     text = text.replace("<", " LESSER THAN ")
     text = text.replace(">", " GREATER THAN ")
+    text = text.replace("+", " PLUS ")
     return text.replace('\n', ';').replace('\t', '    ')
 
 def node2treant(node, code, variables):
