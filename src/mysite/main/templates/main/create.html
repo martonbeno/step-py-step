@@ -312,12 +312,12 @@
 					//ret += 'style="background-color:' + backgroundColor + '">';
 					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
 					ret += '">';
-					ret += "<td>" + v['name'] + "</td>";
+					ret += '<td style="min-width:100px">' + v['name'] + "</td>";
 					
 					if(! v['is_container']){
 						
 						if(! v['defined_elsewhere']){
-							ret += "<td>" + v['type'] + "</td>";
+							ret += '<td style="min-width:100px">' + v['type'] + "</td>";
 
 							let value;
 							if(v['value'] === true)
@@ -328,18 +328,18 @@
 								value = 'None';
 							else
 								value = v['value'];
-							ret += '<td style="white-space: pre-wrap">' + value + "</td>";
+							ret += '<td style="white-space: pre-wrap; min-width:100px">' + value + "</td>";
 						}
 						else{
-							ret += "<td></td>";
-							ret += "<td>( reference )</td>";
+							ret += '<td style="min-width:100px"></td>';
+							ret += '<td style="min-width:100px">( reference )</td>';
 						}
 
 					}
 
 					else{
-						ret += "<td>" + v['type'] + "</td>";
-						ret += "<td>" + makeTable(v['children']) + "</td>";
+						ret += '<td style="min-width:100px">' + v['type'] + "</td>";
+						ret += '<td style="min-width:100px">' + makeTable(v['children']) + "</td>";
 					}
 					ret += "</tr>";
 				}
@@ -526,8 +526,7 @@
 							<button id="exitCodeButton" class="duringAnalysis" onclick="exit_code()" style="visibility:hidden;max-height:0px;">Exit code</button>
 							<br>
 						</div>
-						<button onclick="testButtonPressed()">Teszt</button>
-						<br>
+						<!--<button onclick="testButtonPressed()">Teszt</button>-->
 						<pre class="duringAnalysis duringError sh_python" style="visibility: hidden; max-height: 0px;">
 							<p>---Output---</p>
 							<p id="outputField" style="overflow-y: scroll;"></p>
