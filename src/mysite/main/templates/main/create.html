@@ -362,7 +362,8 @@
 					//ret += 'style="background-color:' + backgroundColor + '">';
 					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
 					ret += '">';
-					ret += '<td style="min-width:10px;background-color:#FF0000">' + 'X' + "</td>";
+					ret += '<td style="min-width:10px;background-color:#FF0000">';
+					ret += '<img src="/static/x.png" alt="Delete row"></td>';
 					ret += '<td style="min-width:100px;">' + v['name'] + "</td>";
 					
 					if(! v['is_container']){
@@ -453,8 +454,12 @@
 								return;
 
 							console.log(event);
-							LAST_CLICKED = event.target;
-							let row = event.target;
+							let cell = event.target;
+							while(cell.nodeName != "TD")
+								cell = cell.parentElement;
+
+							LAST_CLICKED = cell;
+							let row = cell;
 							while(row.nodeName != "TR")
 								row = row.parentElement;
 
@@ -468,7 +473,7 @@
 							let rightCell = row.childNodes[row.childNodes.length-1];
 
 							let deleteCell = row.childNodes[0];
-							if(deleteCell === event.target){
+							if(deleteCell === cell){
 								console.log("annyi");
 								let args = {'var_name': leftCell.innerText}
 								py_api_request('delvar', args, function(data){
@@ -478,7 +483,7 @@
 								return;
 							}
 							else
-								console.log("ezek", deleteCell, event.target);
+								console.log("ezek", deleteCell, cell);
 
 							let changeFrom = rightCell.innerHTML;
 							let isDataStructure = rightCell.innerText !== rightCell.innerHTML;
@@ -542,7 +547,7 @@
 					
 						<div class="preAnalysis">
 							<select id="selectExample" class="preAnalysis" onchange="onSelectExample(this)">
-								<option selected value="">Select example</option>
+								<option selected value="">Select demo</option>
 							{% for example_file in example_files %}
 								<option value="{{example_file}}">{{example_file}}</option>
 							{% endfor %}
