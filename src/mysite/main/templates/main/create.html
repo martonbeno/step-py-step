@@ -303,14 +303,15 @@
 				let cell0 = newRow.insertCell(0);
 				let cell1 = newRow.insertCell(1);
 				let cell2 = newRow.insertCell(2);
-				let cells = [cell0, cell1, cell2];
-				let inputFields = [];
+				let cell3 = newRow.insertCell(3);
+				let cells = [cell0, cell1, cell2, cell3];
+				let inputFields = [null];
 
-				for(let i=0; i<3; i++){
+				for(let i=1; i<4; i++){
 					let actcell = cells[i];
 					let inputField = document.createElement("INPUT");
 					inputField.value = '';
-					if(i < 2)
+					if(i < 3)
 						inputField.size = 1;
 					inputFields.push(inputField);
 				}
@@ -321,9 +322,9 @@
 					if(event.keyCode === 13 && inputFields.includes(document.activeElement)){ //ENTER
 						console.log("adjuk be");
 						let args = {
-							'var_name': inputFields[0].value,
-							'var_type': inputFields[1].value,
-							'value': inputFields[2].value,
+							'var_name': inputFields[1].value,
+							'var_type': inputFields[2].value,
+							'value': inputFields[3].value,
 						}
 
 						py_api_request('newvar', args, function(data){
@@ -336,7 +337,7 @@
 					}
 				}
 
-				for(let i=0; i<3; i++){
+				for(let i=1; i<4; i++){
 					inputField = inputFields[i];
 					actcell = cells[i];
 					inputField.addEventListener("keyup", onKeyUp);
@@ -362,14 +363,17 @@
 					//ret += 'style="background-color:' + backgroundColor + '">';
 					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
 					ret += '">';
-					ret += '<td style="min-width:10px;background-color:#FF0000">';
-					ret += '<img src="/static/x.png" alt="Delete row"></td>';
-					ret += '<td style="min-width:100px;">' + v['name'] + "</td>";
+					ret += '<td style="min-width:10px;text-align:center;">';
+					if(v['is_local']){
+						ret += '<img src="/static/x.png" alt="Delete row">'
+					}
+					ret += '</td>';
+					ret += '<td style="min-width:50px;">' + v['name'] + "</td>";
 					
 					if(! v['is_container']){
 						
 						if(! v['defined_elsewhere']){
-							ret += '<td style="min-width:100px">' + v['type'] + "</td>";
+							ret += '<td style="min-width:50px">' + v['type'] + "</td>";
 
 							let value;
 							if(v['value'] === true)
@@ -383,15 +387,15 @@
 							ret += '<td style="white-space: pre-wrap; min-width:100px">' + value + "</td>";
 						}
 						else{
-							ret += '<td style="min-width:100px"></td>';
-							ret += '<td style="min-width:100px">( reference )</td>';
+							ret += '<td style="min-width:50px"></td>';
+							ret += '<td style="min-width:50px">( reference )</td>';
 						}
 
 					}
 
 					else{
-						ret += '<td style="min-width:100px">' + v['type'] + "</td>";
-						ret += '<td style="min-width:100px">' + makeTable(v['children']) + "</td>";
+						ret += '<td style="min-width:50px">' + v['type'] + "</td>";
+						ret += '<td style="min-width:50px">' + makeTable(v['children']) + "</td>";
 					}
 					ret += "</tr>";
 				}

@@ -1,0 +1,61 @@
+Szövegmező:
+Egy szövegmező, ahova a felhasználó beviheti a kielemezendő Python kódot. 
+Alapértelmezett állapotban üres.
+
+Select demo
+Egy lenyíló lista, ami a demo kódok fájlneveit tartalmazza. Mikor kiválasztunk egy elemet a listából, elindul demo kód elemzése.
+
+Fájlbevitel
+A gombra kattintva kiválaszthatunk a saját számítógépünkről egy fájlt.
+Ha a fájl mérete meghaladja az 1 megabájtos küszöböt, a feltöltendő fájl maximális méretére figyelmeztető hibaüzenet ugrik fel.
+Ha megfelelő méretű fájlt választunk ki, akkor annak tartalma megjelenik a szövegmezőben, így az elemzés indítása előtt még módosíthatunk rajta.
+
+Read code gomb
+Elindítja a beviteli mezőben lévő kód elemzését.
+
+Kódmező
+Egy nem szerkeszthető mező, ahol az elemzett kód olvasható. A következő lépésben kiértékelendő sort egy nyíl karakter jelöli.
+
+Step
+Végrehajtja az aktuális sort, vagy ha a sort kisebb végrehajtási egységekre lehet bontani, akkor a következő végrehajtási egységet. Ezután frissíti a változók állapotát és a következő kiértkelendő sort jelölő nyíl pozícióját.
+Ha expression elemzése közben kattintunk rá, azt tudjuk a gombbal léptetni
+
+Next
+Végrehajtja az aktuális sort. Abban különbözik a Step gombtól, hogy ez akkor is a teljes sort hajtja végre, hogyha azt további végrehajtási egységekre is lehetne bontani.
+Ha expression elemzése közben kattintunk rá, akkor azt befejezi és a sor hátralévő részét végrehajtja.
+
+Exit code
+Megszakítja a kód elemzését és visszavisz a főoldalra.
+
+Változók
+Ha a kód futásának aktuális állapotában vannak elmentett változók, akkor ezek egy táblázatban jelennek meg az oldal jobb oldalán.
+A táblázatnak négy oszlopa van:
+1) A változó törlésére szolgáló X gomb. Ezt megnyomva kitöröljük az adott sorhoz tartozó változót a kiértékelt program memóriájából. Akkor működik, ha a gomb lokális változóhoz tartozik.
+2) A változó neve
+3) A változó típusa
+4) A változó értéke
+Ha a változó "function" vagy "Class" típusú, akkor ebben oszlopban a forráskódnak az azt definiáló rész-stringet tartalmazza.
+
+Ha a táblázat egy sorára kattintunk (leszámítva a balszélső, a változó törlésére fenntartott cellát), akkor lehetőségünk van módosítani a változót.
+Ekkor a cella negyedik eleme, ahol az értéket tároljuk, szerkeszthetővé válik.
+Ha beírtuk az kívánt értéket, az enter gombbal küldhetjük el a módosítást a modellnek. Az escape gombbal kiléphetünk a szerkesztési módból és visszaállíthatjuk a változó eredeti értékét.
+Az általunk bevitt, új értéknek a modell megpróbálja automatikusan meghatározni a típusát. Ha nem sikerül, a bevitt értéket stringként fogja kezelni.
+Ha egy változó egy másik változóra mutató referencia, akkor az érték helyén "( reference )" felirat áll. Ilyenkor, ha az egeret a sor fölé visszük, minden más sor, ami osztozik az adott sor által reprezentált változó pointerén, kijelölésre kerül. Így követni tudjuk, hogy mely változók mely változóknak a referenciái.
+Ha a változó list, set, tuple, dictionary típusú, vagy egy, a felhasználó által definiált osztály egy példánya, akkor a típus konténernek minősül.
+A konténer változóknál, az érték cellájában az oldal egy újabb táblázatot generál. Ebben az altáblázatban a változó neve helyett
+-list-ek és tuple-k esetén az index,
+-halmazok esetén üres string,
+-dictionary esetén a kulcs,
+-a forráskódban definiált osztály példánya esetén az adattag neve
+áll.
+A konténerek tartalmazhatnak további konténereket, ezeket az oldal rekurzívan, tetszőleges mélységig megjeleníti.
+
+Add variable
+Ezzel a gombbal tudunk új változót létrehozni. A gombra kattintva újabb sort szúr az oldal a változókat tartalmazó táblázathoz, ahol a változó neve, típusa és értéke helyén egy-egy input mező áll. Ha ki vannak töltve a mezők, az enter gombbal tudjuk hozzáadni a változót. Ha mégsem akarunk új változót hozzáadni, az escape gombbal megszakíthatjuk a folyamatot. A típus mezőt nem kötelező kitölteni. Ha ezt üresen hagyjuk, a modell az értékből próbálja meghatározni az új változó típusát. Ha nem talál a szintaxisnak megfelelő típust, vagy a típus szintaktikailag nem felel meg a jobboldali cellában megadott értékkel, akkor a modell stringként menti el az új változót. Ha más ok miatt nem érvényes az értékadás (például a változó neve számmal kezdődik), akkor nem jön létre új változó.
+
+Expression elemzés
+Ha az elemzés aktuális sora expressiont tartalmaz, megjelenik az "Analyze Expression" gomb. Erre kattintva elindíthatjuk az expression lépésenkénti kiértékelését. A step gombbal léphetünk az expression elemzés következő egységére. A next gombbal befejezzük a kiértékelést és a következő sorra ugrunk.
+Expression elemzés közben elérhetővé válik az "Abstract Syntax Tree" gomb, amit megnyomva egy felugró ablakban kirajzolthatjuk az expression absztrakt szintaxis fáját.
+
+Output mező
+Itt az elemzett kód által a standard output-ra és standard error-ra nyomtatott üzeneteket láthatjuk.
