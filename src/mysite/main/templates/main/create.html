@@ -295,7 +295,57 @@
 				return ret;
 			}
 
+			function addVariableButtonClicked(){
+				let table = document.getElementById("variables").childNodes[0];
+				let nrows = table.rows.length;
+				let newRow = table.insertRow(nrows);
+				newRow.classList.add("local-var");
+				let cell0 = newRow.insertCell(0);
+				let cell1 = newRow.insertCell(1);
+				let cell2 = newRow.insertCell(2);
+				let cells = [cell0, cell1, cell2];
+				let inputFields = [];
+
+				for(let i=0; i<3; i++){
+					let actcell = cells[i];
+					let inputField = document.createElement("INPUT");
+					inputField.value = '';
+					if(i < 2)
+						inputField.size = 1;
+					inputFields.push(inputField);
+				}
+
+				function onKeyUp(event){
+					event.preventDefault();
+					//let self = event.target;
+					if(event.keyCode === 13 && inputFields.includes(document.activeElement)){ //ENTER
+						console.log("adjuk be");
+						let args = {
+							'var_name': inputFields[0].value,
+							'var_type': inputFields[1].value,
+							'value': inputFields[2].value,
+						}
+
+						py_api_request('newvar', args, function(data){
+							setData(data);
+						});
+
+					}
+					else if(event.keyCode === 27){ //ESCAPE
+						setData(null);
+					}
+				}
+
+				for(let i=0; i<3; i++){
+					inputField = inputFields[i];
+					actcell = cells[i];
+					inputField.addEventListener("keyup", onKeyUp);
+					actcell.appendChild(inputField);
+				}
+			}
+
 			function makeTable(localvars){
+				console.log("maketable", localvars);
 				//TODO ha esetleg html cuccok lennének a táblázat mezőiben, azokat escape-elni valahogy
 
 				let ret = "<table border=1>";
@@ -307,12 +357,13 @@
 						ONLY_GLOBAL_POINTERS.push(v['pointer']);
 					}
 
-					ret += '<tr ';
+					ret += '<tr style="min-height:23px;" ';
 					ret += 'class="pointer_' + v['pointer'];
 					//ret += 'style="background-color:' + backgroundColor + '">';
 					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
 					ret += '">';
-					ret += '<td style="min-width:100px">' + v['name'] + "</td>";
+					ret += '<td style="min-width:10px;background-color:#FF0000">' + 'X' + "</td>";
+					ret += '<td style="min-width:100px;">' + v['name'] + "</td>";
 					
 					if(! v['is_container']){
 						
@@ -407,11 +458,27 @@
 							while(row.nodeName != "TR")
 								row = row.parentElement;
 
+							//if(row.childList
+
 							if(row.classList.contains('nonlocal-var'))
 								return;
 
-							let leftCell = row.childNodes[0];
+
+							let leftCell = row.childNodes[1];
 							let rightCell = row.childNodes[row.childNodes.length-1];
+
+							let deleteCell = row.childNodes[0];
+							if(deleteCell === event.target){
+								console.log("annyi");
+								let args = {'var_name': leftCell.innerText}
+								py_api_request('delvar', args, function(data){
+									setData(data);
+								});
+								
+								return;
+							}
+							else
+								console.log("ezek", deleteCell, event.target);
 
 							let changeFrom = rightCell.innerHTML;
 							let isDataStructure = rightCell.innerText !== rightCell.innerHTML;
@@ -534,6 +601,9 @@
 						</pre>
 					</div>
 					<div class="column column-b">
+						<div class="duringAnalysis" style="visibility: hidden; max-height: 0px;">
+							<button onclick="addVariableButtonClicked();">Add variable</button>
+						</div>
 						<pre style="
 									visibility:hidden;
 									max-height:0px;

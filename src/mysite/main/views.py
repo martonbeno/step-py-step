@@ -66,13 +66,24 @@ def api(request):
 	elif command == "next":
 		ret = SPS_MODEL.request("next")
 
+	elif command == "newvar":
+		msg = f"newvar {args['var_name']} {args['var_type'] if args['var_type'] else 'autocast'} {args['value']}"
+		ret = SPS_MODEL.request(msg)
+
 	elif command == "modify":
 		msg = f"modify {args['var_name']} {args['value']}"
+		ret = SPS_MODEL.request(msg)
+
+	elif command == "delvar":
+		msg = f"delvar {args['var_name']}"
 		ret = SPS_MODEL.request(msg)
 
 	elif command == "exit":
 		SPS_MODEL.request("exit")
 		ret = {'exit':'yes'}
+
+	else:
+		print(f"kommand:{command}")
 	
 	ret = json.dumps(ret)
 	print("api response", ret)

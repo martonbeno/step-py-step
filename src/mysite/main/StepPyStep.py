@@ -199,9 +199,59 @@ class StepPyStep(pdb.Pdb):
                     break
 
                 line = "!" + line
-                #debug("ezt próbálom", line)
                 self.onecmd(line)
                 self.request_q.put("get")
+
+            elif msg.startswith("newvar"):
+                try:
+                    var_name, vartype, value = re.findall(r'newvar (\w+) (\w+) (.+)', msg)[0]
+                except Exception:
+                    debug("nem érvényes értékadás")
+                    self.request_q.put("get")
+                    break
+
+                if vartype == "autocast":
+                    line = f"{var_name}={value}"
+                else:
+                    line = f"{var_name}={vartype}({value})"
+
+                try:
+                    exec(line)
+                except Exception:
+                    value = value.replace('"', '\\"')
+                    value = '"' + value + '"'
+                    line = f"{var_name}={value}"
+
+                try:
+                    exec(line)
+                except Exception:
+                    debug("nem érvényes értékadás")
+                    self.request_q.put("get")
+                    break
+
+                line = "!" + line
+                self.onecmd(line)
+                self.request_q.put("get")
+
+            elif msg.startswith("delvar"):
+                try:
+                    var_name = re.findall(r'delvar (\w+)', msg)[0]
+                except Exception:
+                    debug("nem érvényes változó törlés")
+                    self.request_q.put("get")
+                    break
+
+                try:
+                    exec(f"{var_name}=1\ndel {var_name}")
+                except Exception:
+                    debug("nem érvényes változó törlés 2")
+                    self.request_q.put("get")
+                    break
+
+                self.onecmd(f"!del {var_name}")
+                self.request_q.put("get")
+
+
 
             elif msg == "get":
                 ret = dict()
@@ -257,13 +307,10 @@ class StepPyStep(pdb.Pdb):
         while f:
             filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(f)
             if filename_with_path == self.filename_with_path:
-                #print("MEGY MÉG NYUGI")
                 return True
-            #else:
-            #    print("nem az...")
             f = f.f_back
 
-        #print("végevégevégevége"*22)
+        
         return False
 
         
@@ -272,7 +319,6 @@ if __name__ == "__main__":
     filename = "ja2.py"
     filename = "ja.py"
 
-    #p = StepPyStep(filename=filename)
     p = StepPyStep()
     init_msg = p.start()
     if not init_msg['compile_success']:
