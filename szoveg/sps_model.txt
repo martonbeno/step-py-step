@@ -1,0 +1,115 @@
+StepPyStep dokumentáció
+
+Az alkalmazás legfontosabb része a StepPyStep osztály.
+A StepPyStep osztály a beépített Python debuggerből, a Pdb osztályból származtatjuk.
+
+A Pdb osztály ami két további osztályból származik:
+-a Bdb, egy absztrakt oszály, más debuggerek ősosztályának tervezték
+-a Cmd, ami a standard input-output kommunikációt hivatott megkönnyíteni
+
+Kézenfekvő lett volna a Bdb osztályra építeni a StepPyStep osztályt, viszont a Pdb-ben már be voltak építve olyan funkciók, amiket egyszerűbben át tudok ültetni a StepPyStep-be. Elegendő bizonyos metódusait felüldefiniálni, hogy a kommunikációt a standard input-output-ról átcsatornázzam.
+
+A python debugger:
+sok funkciót használ, brekapoint, stb
+ezeket a parancsokat használom:
+	-step
+	-next
+	-exit
+	- felkiáltójellel kezdődő parancsokat, amivel egy kódrészletet szúrhatunk be a helyre ahol tartunk
+
+Felüldefiniáljuk a cmdloop metódust, így ahol a Pdb egy stdin-ről várna üzenetet, ott nálunk a request_q multiprocessing queue-ból fog várni
+
+start(source_code: str|None, example_file_name:str|None):
+Ezzel a metódussal tudjuk elindítani egy Python script elemzését. Kétféle működése van
+1) Egy szkriptnek a forráskódját adjuk meg stringként
+2) Egy demo kód fájlnevét adjuk meg
+
+A metódus először ellenőrzi, hogy tartalmaz-e a forráskód tiltott kifejezéseket (import, exec, eval), vagy fordítási idejű hibát.
+Ha nem, összegyűjtjük a kiértékelendő expression-öket (x. fejezet)
+Egy új process-t indítunk, amivel ezentúl a 'request' metóduson keresztül multiprocessing queue-kon fogunk kommunikálni.
+Az újonnan elindított processnek elküldjük az első, 'init' üzenetet.
+
+A visszatérési értéke:
+{
+	'compile_success': bool,
+	'error_message': str|None,
+	'source_code': str|None
+}
+
+
+cmdloop():
+Eredetileg ez a Pdb osztály azon metódusa, ahol a felhasználó üzeneteit várjuk. A Pdb-ben a bevitt üzenetet a 'onecmd' hajtja végre.
+Várunk egy üzenetet a főprocess-ből és az annak megfelelő utasítás sorozatot hajtjuk végre onecmd hívásokkal
+
+init:
+Még mielőtt elkezdenénk a felhasználó kódját végrehajtani, az elejére beszúrjuk ezt:
+STEP_PY_STEP_OUTPUT=''
+def STEP_PY_STEP_PRINT(*args, sep=' ', end='\n', file=None, flush=False):
+	global STEP_PY_STEP_OUTPUT
+	STEP_PY_STEP_OUTPUT += sep.join([str(x) for x in args]) + end
+print=STEP_PY_STEP_PRINT
+
+ezzel felüldefiniáljuk a print függvényt, ami ezentúl a standard output helyett a STEP_PY_STEP_OUTPUT változóba fogunk csatornázni
+a program aktuális állapotához hozzá tartozik, hogy mi van a standard outputra írva, ezt később ebből a változóból fogjuk kiolvasni
+
+newvar:
+ha az üzenet newvarral kezdődik, akkor ilyen formátumot várunk:
+"newvar [változó neve] [változó típusa|autocast] [változó értéke]"
+pl: "newvar x int 5"
+a felhasználó szkriptjébe beszúrunk egy értékadó sort:
+-ha a változó típusa meg van adva, akkor a beszúrandó sor formája:
+	[változó neve]=[változó típusa]([változó értéke])
+	pl. x=int(5)
+-ha nincs megadva, egyszerűen:
+	[változó neve]=[változó típusa]
+az exec utasítással leellenőrizzük, hogy ez egy futtatható sor-e
+ha nem, feltesszük, hogy a megadott érték nem összeegyeztethető a megadott típussal, ekkor ezt stringként mentjük el,
+"newvar x int hello"
+üzenet esetén először
+x=int(hello)
+beszúrandó sort konstruálnánk, azonban, mivel ez nem egy helyes python sor önmagában, a sort erre cseréljük:
+x="hello"
+a sort beszúrjuk, majd a subprocess meghívja önmagának a 'get' részét, és visszaadja a program állapotát
+
+modify:
+nagyon hasonlóan működik a newvar-hoz, de itt nem kell megadnunk a beszúrandó változó típusát, így a várt üzenet ilyen formájú:
+"modify [változó neve] [változó értéke]"
+pl. "modify x 1.2"
+
+delvar:
+a kezdeti üzenet formája: "delvar [változó neve]"
+pl. "delvar x"
+ekkor egyszerűen beszúrjuk a szkriptbe a "del [változó neve]" utasítást, meghívjuk a get részt és visszaadjuk a program állapotát
+
+get:
+visszaadja a szkript aktuális állapotát
+a Pdb osztály működése miatt az abból származtatott osztályunk a self.curframe változóban tárol egy 'frame' típusú objektumot, amit a beépített inspect modullal megvizsgálva sokmindent megtudhatunk a program állapotáról ezt használjuk ki hogy visszaadjunk egy dictionary-t amiben eltárolunk mindent amit tudni kell
+
+{
+	'isover': bool,
+	'error': None|str,
+	'localvars': dict,
+	'lineno': int,
+	'expr': None|int
+}
+
+'isover': bool
+igaz, ha a felhasználó szkriptjének végére értünk
+ehhez megvizsgáljuk, hogy a frame a felhasználó szkript-fájljához tartozik-e, vagy a frame direkt, vagy indirekt szülője-e egy olyannak, ami igen
+ha ez igaz, akkor nem tudjuk többé léptetni a progarmot
+
+'error': None|str
+Az StepPyStep osztály konstruktorában átirányítottuk a standard error-ról egy saját változóba az üzeneteket. A get hívásakor ellenőrizzük, hogy szerepl-e itt error üzenet, ha igen, ide másoljuk, egyébként None értéket adunk neki.
+
+'localvars': dictioinary-k list-je
+ide mentjük a változókat (lásd x. fejezet)
+
+'lineno': int
+a forráskód hanyadik soránál tart a script futása (1-től indexelve)
+
+'expr': None|dict
+a szkript indításakor elmentettük, hogy mely sorokban találhatók expression-ök (lásd ast fejezet), ha egy ilyen soroban járunk, akkor ide mentjük ennek a kiértékelését (lásd ast fejezet)
+
+
+exit:
+végrehajtja a pdb 'exit' utasítását, ezzel leállítva a processt

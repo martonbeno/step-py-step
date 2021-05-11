@@ -104,21 +104,22 @@ class Tests(unittest.TestCase):
 		for v in variables:
 			if v['name'] == 'a':
 				assert v['type'] == 'int'
-				assert v['value'] == 1
+				assert int(v['value']) == 1
 			if v['name'] == 'b':
 				assert v['type'] == 'str'
 				assert v['value'] == 'ok'
 			if v['name'] == 'c':
 				assert v['type'] == 'float'
-				assert abs(v['value']-0.5) <= 0.01
+				assert abs(float(v['value'])-0.5) <= 0.01
 			if v['name'] == 'd':
 				assert v['type'] == 'bool'
-				assert v['value'] == True
+				assert v['value'] == str(True)
 			if v['name'] == 'e':
 				assert v['type'] == 'list'
-				assert v['value'][0] == 2
-				assert v['value'][1] == 3
-				assert v['value'][2] == 4
+				assert len(v['children']) == 3
+				assert int(v['children'][0]['value']) == 2
+				assert int(v['children'][1]['value']) == 3
+				assert int(v['children'][2]['value']) == 4
 			if v['name'] == 'f':
 				assert v['type'] == 'function'
 				assert v['value'] == "def f():\n\treturn True\n"
@@ -127,7 +128,7 @@ class Tests(unittest.TestCase):
 				assert v['value'] == "class G:\n\tpass\n"
 			if v['name'] == 'h':
 				assert v['type'] == 'NoneType'
-				assert v['value'] == None
+				assert str(v['value']) == str(None)
 
 		model.request("exit")
 	
@@ -168,7 +169,7 @@ class Tests(unittest.TestCase):
 			msg = model.request("step")
 			step_counter += 1
 		
-		assert step_counter == 7
+		assert step_counter == 5, f"igazi step counter {step_counter}"
 
 		model.request("exit")
 
@@ -229,17 +230,17 @@ class Tests(unittest.TestCase):
 		assert lst['is_container'] == True
 		assert lst['is_udt'] == False
 		lst_children = lst['children']
-		assert lst_children[0]['name'] == 0 #index
+		assert int(lst_children[0]['name']) == 0 #index
 		assert lst_children[0]['type'] == 'int' #index
-		assert lst_children[0]['value'] == 1 #index
+		assert int(lst_children[0]['value']) == 1 #index
 
-		assert lst_children[1]['name'] == 1 #index
+		assert int(lst_children[1]['name']) == 1 #index
 		assert lst_children[1]['type'] == 'int' #index
-		assert lst_children[1]['value'] == 2 #index
+		assert int(lst_children[1]['value']) == 2 #index
 
-		assert lst_children[2]['name'] == 2 #index
+		assert int(lst_children[2]['name']) == 2 #index
 		assert lst_children[2]['type'] == 'int' #index
-		assert lst_children[2]['value'] == 3 #index
+		assert int(lst_children[2]['value']) == 3 #index
 
 
 		msg = model.request("step")
@@ -278,7 +279,7 @@ class Tests(unittest.TestCase):
 		assert len(g['children']) == 1
 		g_child0 = g['children'][0]
 		assert g_child0['type'] == 'int'
-		assert g_child0['value'] == 5
+		assert int(g_child0['value']) == 5
 
 
 		msg = model.request("step")

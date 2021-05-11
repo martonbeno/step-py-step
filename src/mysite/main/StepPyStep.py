@@ -144,16 +144,13 @@ class StepPyStep(pdb.Pdb):
             msg = self.request_q.get()
 
             if msg == "exit":
-                #print("EXIT üzi")
                 self.onecmd("exit")
                 self.answer_q.put("exit")
                 return
 
             elif not self.is_still_in_user_code(self.curframe):
-                #print("ittttttttTTTTTT")
                 ret = self.lastget
                 ret['isover'] = True
-                #print(ret)
                 self.answer_q.put(ret)
 
             elif msg == "init":
@@ -284,10 +281,11 @@ class StepPyStep(pdb.Pdb):
                 if lineno in self.expression_at_line:
                     #actual local vars
                     ret['expr'] = dict()
-                    localvars = {rec['name']: rec['value'] for rec in ret['localvars'] if rec['is_local']}
+                    #print(self.curframe.f_locals)
+                    #localvars = {rec['name']: rec['value'] for rec in ret['localvars'] if rec['is_local']}
                     node = self.expression_at_line[lineno]
-                    ret['expr']['sequence'] = node2seq(node, self.source_code, localvars)
-                    ret['expr']['treant'] = node2treant(node, self.source_code, localvars)
+                    ret['expr']['sequence'] = node2seq(node, self.source_code, self.curframe.f_locals)
+                    ret['expr']['treant'] = node2treant(node, self.source_code, self.curframe.f_locals)
                 else:
                     ret['expr'] = None
                 

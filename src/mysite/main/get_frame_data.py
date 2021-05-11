@@ -4,27 +4,23 @@ import traceback
 import copy
 import json
 
+
 class Var:
 	def __init__(self, pointer, name):
 		self.pointer = pointer
 		self.name = name
-		self.is_processed = False #valszeg nem kell
 		self.is_udt = False
 		self.is_container = False
 		self.children = []
 
-	def __str__(self):
-		return f'{self.name} (processed={self.is_processed})'
-
 	def get_dict(self):
-		assert self.is_processed
 		ret = dict()
 
 		#skipping non-user-defined classes
 		if not self.defined_elsewhere and self.type == "Class" and not self.is_udt:
 			return ret
 
-		ret['name'] = self.name
+		ret['name'] = str(self.name)
 		ret['pointer'] = self.pointer
 		ret['is_local'] = None
 		ret['is_global'] = None
@@ -47,7 +43,8 @@ class Var:
 				print(f"HIBA {self.data}")
 				traceback.print_exc()
 		else:
-			ret['value'] = self.data if not (self.is_udt or self.type is set) else str(self.data)
+			#ret['value'] = self.data if not (self.is_udt or self.type is set) else str(self.data)
+			ret['value'] = str(self.data)
 
 		ret['children'] = []
 		for child in self.children:
@@ -119,7 +116,6 @@ class Var:
 					pass
 					#print("nincs dict-je ennek:", self.type)
 
-		self.is_processed = True
 		return self.children
 
 def set_scope(node, is_local=None, is_global=None, pointer=None):
@@ -203,7 +199,6 @@ def get_pointers_from_scope(frame, scope):
 		for node in generations[-1]:
 			children = node.process(pointers)
 			new_generation = new_generation + children
-			#pointers = pointers + [child.pointer for child in new_generation]
 			pointers.append(node.pointer)
 
 		if new_generation:

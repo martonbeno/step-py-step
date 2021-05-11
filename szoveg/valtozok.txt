@@ -1,0 +1,144 @@
+get_pointers(frame):
+bemenetként kapjuk a felhasználó szkriptjének aktuális állapotát leíró frame objektumot
+
+egy változót egy ilyen dictionary reprezentál:
+{
+	"name": str,
+	"pointer": int,
+	"is_local": bool,
+	"is_global": bool,
+	"is_udt": bool,
+	"is_container": bool,
+	"defined_elsewhere": bool,
+	"type": str,
+	"value": str|bool|int|float|list|dict|None,
+	"children": ehhez hasonló dictionary-k listája
+}
+
+name: a változó neve
+pointer: a változó memória címe, amit a beépített 'id' függvénnyel érünk el
+is_local: a szkript jelenlegi állapotából elérhető-e a változó
+is_global: globális-e a változó
+is_udt: (user-defined-type), igaz, ha a változó egy olyan osztálynak a példánya, amit a feldolgozott szkriptben lett definiálva
+is_container: (lásd alább)
+defined_elsewhere: igaz, ha a változó valójában egy másik változóra mutató referencia. ha ez igaz, akkor a további értékek nem kerülnek kitöltésre (None, vagy üres lista lesz a helyükön)
+type: a változó típusa
+value: általában a változó értéke, ha a változó egy osztály vagy függvény, akkor a mező annak forráskódját tartalmazza
+children: ha a változó konténer, akkor ebben található az elemeinek listája. 
+
+
+konténernek minősül egy változó, ha a típusa list, set, tuple, dictionary vagy UDT (lábjegyzet). Ekkor az elemeit egy hasonló dictionary reprezentálja a 'children' mezőben lévő lista
+egy konténer elemének a "name" mezője:
+-ha list, akkor az az elem indexe,
+-ha tuple, akkor az elem indexe
+-ha set, akkor üres
+-ha dictionary, akkor az elem kulcsa,
+-ha UDT, akkor az adattag neve
+természetesen egy konténer tartalmazhat egy további konténert tetszőleges mélységig.
+
+a változókat 2 lépésben gyűjtjük be:
+-egyszer a lokális változókat
+-majd a globális változókat
+ezután összefésüljük a két halmazt, beállítva az is_local és is_global értékeket
+a változókat az aktuális frame-ből szedjük ki a beépített inspect modul segítségével
+a konténerek miatt egy faszerkezet áll elő
+ezt mélységi bejárással fogjuk feldolgozni
+erre az esetleges körbehivatkozások miatt van szükség
+
+1) lementjük a kezdeti változókat, az esetleges children mezőit üresen hagyva, a csúcsokat feldolgozottságát hamisra állítjuk
+2)
+-beállítjuk a pointer, name, type, value mezőket
+-az utolsó generációból vesszük azokat a csúcsokat, ahol a 'defined_elsewhere' mező hamis,
+-ezeknek lementjük a gyermekeit a children mezőbe, azoknak az esetleges children mezőit üresen hagyva,
+-az így keletkezett generáció csúcsain megvizsgáljuk, hogy létezik-e már az adott memóriacímen lévő változó egy korábbi generációban, és eszerint beállítjuk a 'defined_elsewhere' mezőt
+-ezek szüleinek feldolgozottságát igazra állítjuk
+3) ismételjük a 2-es lépést, amíg van feldolgozatlan csúcs
+
+erre a körbehivatkozások miatt van szükség. Tekinstük a következő kódot:
+
+class A: pass
+a = A()
+b = A()
+a.sibling = b
+b.sibling = a
+
+Ha mélységi bejárást használnánk, végtelen nagy fát kéne bejárnunk:
+a.sibling.sibling.sibling.sibling....
+ezt kiküszöbölve szélességi bejárást alkalmazunk, így észre tudjuk venni, hogy az a.sibling csak egy referencia és nem kell a további gyermekeit vizsgálni
+(ide a fának a lépéseit)
+
+ha a változó függvény, vagy osztály, akkor az inspect modul getsource függvényével le tudjuk kérni az eredti kódból a definícióját
+
+
+
+
+példakód:
+a = 1
+
+[
+  {
+    "name":"a",
+    "pointer":9784896,
+    "is_local":true,
+    "is_global":true,
+    "is_udt":false,
+    "is_container":false,
+    "defined_elsewhere":false,
+    "type":"int",
+    "value":1,
+    "children":[
+      
+    ]
+  }
+]
+
+
+példa konténerre és referenciára:
+a=[0]
+b=a
+
+[
+  {
+    "name":"a",
+    "pointer":139764789465984,
+    "is_local":true,
+    "is_global":true,
+    "is_udt":false,
+    "is_container":true,
+    "defined_elsewhere":false,
+    "type":"list",
+    "value":[
+      1
+    ],
+    "children":[
+      {
+        "name":0,
+        "pointer":9784896,
+        "is_local":null,
+        "is_global":null,
+        "is_udt":false,
+        "is_container":false,
+        "defined_elsewhere":false,
+        "type":"int",
+        "value":1,
+        "children":[
+          
+        ]
+      }
+    ]
+  },
+  {
+    "name":"b",
+    "pointer":139764789465984,
+    "is_local":true,
+    "is_global":true,
+    "is_udt":false,
+    "is_container":false,
+    "defined_elsewhere":true,
+    "type":null,
+    "value":null,
+    "children":[
+      
+    ]
+  }
+]

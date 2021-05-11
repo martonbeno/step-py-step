@@ -1,0 +1,110 @@
+expression analysis
+
+A beépített AST modult használom az expression-ök kiértékelésére. Ezzel megkaphatjuk egy tetszőleges kód absztrakt szintaxis fáját.
+
+Ha egy ilyen sorhoz érünk a kódban:
+
+-> if a*2-3 < 10 or b:
+
+segíthet, ha lépésről lépésre láthatjuk, hogy kiértékelődik a kód
+ezt meg tudjuk oldani az absztrakt szintaxis fa és az elmentett változók együttes felhasználásával
+tegyük fel, hogy jelen állás szerint
+a=4
+b=False
+ekkor a kód lebontása a következő:
+
+a*2-3 < 10 or b
+4*2-3 < 10 or b
+8-3 < 10 or b
+5 < 10 or b
+True or b
+True or False
+True
+
+mielőtt elkezdenénk a felhasználó kódjának az elemzését, megkeressük benne a kiértékelendő expression-öket. Olyan részfát keresünk, amik a következő típusú csúcsokból épülnek fel (és nem részfái egy nála nagyobb részfának):
+
+BinOp: műveletek, a többváltozós műveletek több kétváltozós műveletből állnak
+ide tartozik:
+-összeadás
+-kivonás
+-szorzás
+-osztás
+-osztás, egészrészre
+-modulo
+-hatvány
+-bitműveletek
+
+UnaryOp: egyváltozós műveletek
+ide tartozik:
+-not
+-negatív előjel
+-pozitív előjel
+-bitszerinti inverz
+
+BoolOp: boolean műveletek: és, vagy
+
+Compare: összehasonlító műveletek
+ide tartozik:
+==
+!=
+<
+>
+<=
+>=
+is
+is not
+in
+not in
+
+Constant: konstans python objektumok
+Name: változók
+
+Ezt a kód elején csak összegyűjteni tudjuk, kiértékelni nem, hiszen ha változókat tartalmaz, akkor tudnunk kell azok értékeit.
+szóval az elemzés kezdete előtt elmentjük ezeket a nódokat a sorszámmal együtt.
+
+Ha a kódnak egy olyan részéhez érünk, amihez tartozik egy ilyen csúcs, elkezdjük a fa minden csúcsának a kiértékelését.
+
+eval_expr(node):
+	Ha egy csúcs Constant, akkor egyszerűen visszaadjuk a node-ot.
+	Ha egy csúcs Name, kikeressük a lokális változók közül az értékét és azt visszaadjuk Constantként.
+	Ha egy csúcs UnaryOp, BinOp, BoolOp vagy Compare, akkor 
+	minden gyerekére meghívjuk az 'eval_expr' függvényt, így minden gyereke Constant típusú lesz. Ezután kiértékeljük az 'eval' függvénnyel.
+
+Ha minden csúcsnak megvan a Constant értéke, bejárjuk újból a fát. Ilyen módon:
+
+vesszük a teljes kifejezést pl. (a*2-3 < 10 or b)
+
+tree2seq(node):
+	1) ha a csúcs Constant, visszaadjuk az eredeti kódrészletet egy egyelemű listában
+	2) ha a csúcs Name vagy UnaryOp, visszaadunk egy kételemű listát:
+	[eredeti kódrészlet, kiértékelt kódrészlet]
+	3) ha a cúscs BinOp, BoolOp vagy Compare, több részletből áll a feldolgozás, egy listát:
+	-az eredeti node kódrészlet
+	-a tree2seq(node.left) lista és a node.right eredeti kódrészletének összes kombinációja
+	-a node.left kiértékelt kódrészletének és a tree2seq(node.right) lista összes kombinációja
+	-a feldolgozott node kódrészlet
+
+a végén kitöröljük a listából az összes elemet a megegyezik az őt megelező elemmel
+
+pl
+a=3
+node = a*2:
+tree2seq(a*2):
+1) első elem (eredeti kódrészlet): "a*2"
+2) a tree2seq(node.left) és a jobboldali kódrészlet összes kombinációja:
+a * 2
+3 * 2
+3) a ..............
+ábrát inkább
+
+a feldolgozás lépéseit tartalmazó listán kívül még ki kell rajzolnunk a szintaxis fát
+ezt egy külső library, a Treant.js (hivatkozás) segítségével oldjuk meg
+a frontend egy json fát vár, ilyen stílusban:
+node: {
+	'text': {
+		'name': str,
+		'title': str,
+		'desc': str
+	},
+	'children': node-ok listája
+}

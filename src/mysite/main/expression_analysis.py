@@ -63,19 +63,7 @@ def contains_function_call(node):
         if contains_function_call(child):
             return True
     return False
-'''
-def is_valid_expression(node, first=True):
-    if first and node.__class__ not in [ast.BinOp, ast.BoolOp, ast.Compare, ast.UnaryOp]:
-        return False
-    if not first and isinstance(node, ast.Call):
-        return False
-    
-    for child in ast.iter_child_nodes(node):
-        if not is_valid_expression(child, first=False):
-            return False
 
-    return True
-'''
 def get_exprs(code):
     node = ast.parse(code)
 
@@ -88,7 +76,6 @@ def get_exprs(code):
         for child in ast.iter_child_nodes(node):
             ret = ret + get_exprs(child)
 
-    #print(ret)
     return ret
 
 def node2seq(node, code, variables):
@@ -172,11 +159,16 @@ def tree2seq(node, start=True):
                 ret.append(x)
         return ret
     
+
     if node['type'] in ("Constant"):
         return [node['code']]
+        
     elif node['type'] in ("Name", "UnaryOp"):
         return [node['code'], str(node['eval'])]
-    elif node['type'] in ("BinOp", "BoolOp", "Compare"):
+        
+
+
+    if node['type'] in ("BinOp", "BoolOp", "Compare"):
         
         if node['type'] in ("BinOp", "Compare"):
             left_child = node['children'][0]
