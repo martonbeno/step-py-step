@@ -2,6 +2,9 @@ import re
 import copy
 import ast
 
+class InvalidExpressionError(Exception):
+    pass
+
 def get_type(node):
     return node.__class__.__name__
     
@@ -51,15 +54,41 @@ def eval_expr(node, variables):
         exe = compile(expr, filename="", mode="eval")
         return ast.Constant(eval(exe))
 
+    raise InvalidExpressionError("naezabaj")
+
+def contains_function_call(node):
+    if isinstance(node, ast.Call):
+        return True
+    for child in ast.iter_child_nodes(node):
+        if contains_function_call(child):
+            return True
+    return False
+'''
+def is_valid_expression(node, first=True):
+    if first and node.__class__ not in [ast.BinOp, ast.BoolOp, ast.Compare, ast.UnaryOp]:
+        return False
+    if not first and isinstance(node, ast.Call):
+        return False
+    
+    for child in ast.iter_child_nodes(node):
+        if not is_valid_expression(child, first=False):
+            return False
+
+    return True
+'''
 def get_exprs(code):
     node = ast.parse(code)
 
     ret = []
+
     if node.__class__ in [ast.BinOp, ast.BoolOp, ast.Compare, ast.UnaryOp]:
-        ret.append(node)
+        if not contains_function_call(node):
+            ret.append(node)
     else:
         for child in ast.iter_child_nodes(node):
             ret = ret + get_exprs(child)
+
+    #print(ret)
     return ret
 
 def node2seq(node, code, variables):

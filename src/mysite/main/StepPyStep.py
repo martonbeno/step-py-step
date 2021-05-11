@@ -76,8 +76,14 @@ class StepPyStep(pdb.Pdb):
         
         self.expression_at_line = dict()
         expressions = get_exprs(source_code)
+        print("expressions:", expressions)
+
         for e in expressions:
-            self.expression_at_line[e.lineno] = e
+            try:
+                self.expression_at_line[e.lineno] = e
+            except Exception:
+                pass
+
         
         self.source_code = source_code
         ret['source_code'] = source_code
@@ -117,16 +123,11 @@ class StepPyStep(pdb.Pdb):
         examples_path = os.path.join(self.path, 'examples')
         return sorted(os.listdir(examples_path))
 
-    def kill(self):
-        #print("KILLL")
-        self.request_q.put("exit") #ez valszeg nem kell
-        self.p.join()
-    
     def request(self, msg):
         self.request_q.put(msg)
         ret = self.answer_q.get()
         if ret == "exit":
-            self.kill()
+            self.p.join()
         return ret
         
     def cmdloop(self, intro=None):
@@ -156,6 +157,7 @@ class StepPyStep(pdb.Pdb):
                 self.answer_q.put(ret)
 
             elif msg == "init":
+                self.lastget = None
                 self.onecmd("ORIGINAL_PRINT=print")
                 self.onecmd("!STEP_PY_STEP_OUTPUT=''")
                 #self.onecmd("!def STEP_PY_STEP_PRINT(*args, sep=' ', end='\\n', file=None, flush=False):global STEP_PY_STEP_OUTPUT;STEP_PY_STEP_OUTPUT+=sep.join([str(x) for x in args])+end;ORIGINAL_PRINT(*args, sep, end, file, flush)")
@@ -289,12 +291,15 @@ class StepPyStep(pdb.Pdb):
                 else:
                     ret['expr'] = None
                 
-                if function in ["STEP_PY_STEP_OUTPUT", "STEP_PY_STEP_PRINT"] or filename_with_path == "<stdin>":
+
+                #TODO helyettesíteni azzal, hogy megeyezik-e a válasz a lastget-tel
+                if self.lastget == ret:
+                    self.request_q.put("step")
+                elif function in ["STEP_PY_STEP_OUTPUT", "STEP_PY_STEP_PRINT"] or filename_with_path == "<stdin>":
                     self.request_q.put("step")
                 else:
                     self.lastget = ret
                     self.answer_q.put(ret)
-            
             
             else:
                 print("elírtad")
@@ -310,7 +315,6 @@ class StepPyStep(pdb.Pdb):
                 return True
             f = f.f_back
 
-        
         return False
 
         
