@@ -1,11 +1,9 @@
 <html>
 	<head>
 		{% load static %}
-		<!--<link rel="stylesheet" href="{% static 'style.css' %}">-->
 		<link rel="stylesheet" href="{% static 'masikstyle.css' %}">
 		<link rel="stylesheet" href="{% static 'sh_style.css' %}">
 		<link rel="stylesheet" href="{% static 'Treant.css' %}">
-		<!--<link rel="stylesheet" href="{% static 'super-simple.css' %}">-->
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 		<script type="text/javascript" src="{% static 'sh_main.js' %}"></script>
@@ -31,23 +29,6 @@
 					//semmi
 				});
 			}
-
-
-			function testButtonPressed(){
-				
-				//let nodeStructure = DATA['expr']['treant'];
-				//nodeStructure = JSON.stringify(nodeStructure);
-				nodeStructure = '{"text":{"name":"Compare","title":"","desc":"a<b"},"children":[{"text":{"name":"Name","title":2,"desc":"a"},"children":[{"text":{"name":"Load","title":""},"children":[]}]},{"text":{"name":"Eq","title":""},"children":[]},{"text":{"name":"Name","title":3,"desc":"b"},"children":[{"text":{"name":"Load","title":""},"children":[]}]}]}';
-				console.log(nodeStructure);
-				nodeStructure = encodeURIComponent(nodeStructure);
-				
-				//createTreant(nodeStructure);
-
-				window.open("../tree?nodeStructure=" + nodeStructure, "Tree", "height=600,width=800");
-				//console.log("nyitom");
-				//openWindowWithPost("../tree/", {csrfmiddlewaretoken: '{{ csrf_token }}'});
-
-			}
 			
 			function readcode(){
 				let source_code = document.getElementById('ta').value;
@@ -57,7 +38,9 @@
 			}
 
 			function startAnalysis(args){
+				console.log("letsgooooooooooOO");
 				py_api_request('start', args, function(data){
+					console.log("aaaaa", data);
 					data = JSON.parse(data);
 
 					console.log(data);
@@ -67,14 +50,12 @@
 
 						let objectsToHide = document.getElementsByClassName("preAnalysis");
 						for(let i=0; i<objectsToHide.length; i++){
-							//objectsToHide[i].style.display = "none";
 							objectsToHide[i].style.visibility = "hidden";
 							objectsToHide[i].style.maxHeight = "0px";
 
 						}
 						let objectsToShow = document.getElementsByClassName("duringAnalysis");
 						for(let i=0; i<objectsToShow.length; i++){
-							//objectsToShow[i].style.display = "block";
 							objectsToShow[i].style.visibility = "visible";
 							objectsToShow[i].style.maxHeight = "none";
 						}
@@ -95,13 +76,11 @@
 
 
 						setData(JSON.stringify(data));
-
-
-
-
 						sh_highlightDocument();
 					}
 					else{
+						console.log("itt");
+						alert(data['error_message']);
 						document.getElementById('outputField').innerHTML = data['error_message'];
 					}
 				});
@@ -135,7 +114,7 @@
 
 				let expressionAnalysisSpan = document.getElementById('expressionAnalysisSpan');
 				//expressionAnalysisField.style.width = 50;
-				expressionAnalysisSpan.innerHTML = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+				//expressionAnalysisSpan.innerHTML = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 				console.log(expressionAnalysisSpan.clientWidth);
 				let seq = DATA['expr']['sequence'];
 				let maxWidth = 0;
@@ -147,7 +126,7 @@
 					if(actWidth > maxWidth)
 						maxWidth = actWidth
 				}
-				console.log(maxWidth);
+				
 				document.getElementById('expressionAnalysisField').style.width = 1*maxWidth;
 				document.getElementById('expressionAnalysisField').style.height = "50px";
 
@@ -202,15 +181,12 @@
 					else if(EXPRESSION_ANALYSIS_IT !== null &&
 						DATA['expr'] !== null &&
 						EXPRESSION_ANALYSIS_IT < DATA['expr']['sequence'].length){
-						//expressionAnalysisButton.style.display = "none";
 						expressionAnalysisButton.style.visibility = "hidden";
 						expressionAnalysisButton.style.maxHeight = "0px";
 
-						//expressionAnalysisField.style.display = "block";
 						expressionAnalysisField.style.visibility = "visible";
 						expressionAnalysisField.style.maxHeight = "none";
 
-						//openTreantButton.style.display = "block";
 						openTreantButton.style.visibility = "visible";
 						openTreantButton.style.maxHeight = "none";
 
@@ -219,16 +195,13 @@
 
 					//ha nincs expression analysis
 					else{
-						//expressionAnalysisButton.style.display = "none";
 						expressionAnalysisButton.style.visibility = "hidden";
 						expressionAnalysisButton.style.maxHeight = "0px";
 
 
-						//expressionAnalysisField.style.display = "none";
 						expressionAnalysisField.style.visibility = "hidden";
 						expressionAnalysisField.style.maxHeight = "0px";
 
-						//openTreantButton.style.display = "none";
 						openTreantButton.style.visibility = "hidden";
 						openTreantButton.style.maxHeight = "0px";
 						EXPRESSION_ANALYSIS_IT = null;
@@ -244,7 +217,6 @@
 						objectsToHide[i].style.visibility = "hidden";
 						objectsToHide[i].style.maxHeight = "0px";
 					}
-					//document.getElementById("exitCodeButton").style.display = "block";
 					document.getElementById("exitCodeButton").style.visibility = "visible";
 					document.getElementById("exitCodeButton").style.maxHeight = "none";
 					document.getElementById('ki').style.visibility = "visible";
@@ -360,7 +332,6 @@
 
 					ret += '<tr style="min-height:23px;" ';
 					ret += 'class="pointer_' + v['pointer'];
-					//ret += 'style="background-color:' + backgroundColor + '">';
 					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
 					ret += '">';
 					ret += '<td style="min-width:10px;text-align:center;">';
@@ -438,7 +409,6 @@
 							for(let j=0; j<elementsToHighlight.length; j++){
 								if(objArr[i] == elementsToHighlight[j])
 									continue;
-								//elementsToHighlight[j].style.backgroundColor = "#FFFF00";
 								elementsToHighlight[j].classList.add('highlighted-var');
 								console.log("hozzáadom");
 							}
@@ -448,7 +418,6 @@
 						function mouseLeave(event){
 							let elementsToHighlight = document.getElementsByClassName(className);
 							for(let j=0; j<elementsToHighlight.length; j++){
-								//elementsToHighlight[j].style.backgroundColor = "#FFFFFF";
 								elementsToHighlight[j].classList.remove('highlighted-var');
 							}
 						}
@@ -466,8 +435,6 @@
 							let row = cell;
 							while(row.nodeName != "TR")
 								row = row.parentElement;
-
-							//if(row.childList
 
 							if(row.classList.contains('nonlocal-var'))
 								return;
@@ -491,7 +458,6 @@
 
 							let changeFrom = rightCell.innerHTML;
 							let isDataStructure = rightCell.innerText !== rightCell.innerHTML;
-							//rightCell.innerHTML = "változás szele";
 							let inputField = document.createElement("INPUT");
 							inputField.value = isDataStructure ? '' : changeFrom;
 							rightCell.innerHTML = "";
@@ -508,7 +474,6 @@
 									console.log("changeto", self.value);
 									IS_MODIFYING = false;
 
-									//TODO elgánsabban, mikor csinálom a highlightot
 									let args = {'var_name': leftCell.innerText, 'value': self.value}
 									py_api_request('modify', args, function(data){
 										setData(data);
@@ -586,7 +551,6 @@
 						<pre class="sh_python duringAnalysis duringError">
 							<p id="ki" class="duringAnalysis duringError" style="overflow-y: scroll; height:0px; visibility: hidden"></p>
 						</pre>
-						<!--<button class="duringAnalysis" onclick="step()" style="display:none;">Step</button><br>-->
 						<div class="duringAnalysis">
 							<button class="duringAnalysis button" onclick="step()" style="visibility:hidden;max-height:0px;">Step</button><br>
 							<button class="duringAnalysis button" onclick="next()" style="visibility:hidden;max-height:0px;">Next</button><br>
@@ -602,11 +566,9 @@
 							<button id="exitCodeButton" class="duringAnalysis" onclick="exit_code()" style="visibility:hidden;max-height:0px;">Exit code</button>
 							<br>
 						</div>
-						<!--<button onclick="testButtonPressed()">Teszt</button>-->
 						<pre class="duringAnalysis duringError sh_python" style="visibility: hidden; max-height: 0px;">
 							<p>---Output---</p>
 							<p id="outputField" style="overflow-y: scroll;"></p>
-							<!--<textarea id="outputField"></textarea>-->
 						</pre>
 					</div>
 					<div class="column column-b">

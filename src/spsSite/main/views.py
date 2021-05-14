@@ -12,16 +12,7 @@ import os
 
 SPS_MODEL = None
 
-def index(response, id):
-	return render(response, "main/base.html", {'name':str(id**2)})
-	# return HttpResponse(f"<h1>{id}</h1>")
-	
-def home(response):
-	return render(response, "main/home.html", {'name':'teszt'})
-	# return HttpResponse("<h1>view1</h1>")
-
 def tree(request):
-	print(request.POST)
 	try:
 		nodeStructure = request.GET['nodeStructure']
 	except KeyError:
@@ -29,22 +20,23 @@ def tree(request):
 	
 	return render(request, "main/tree.html", {'nodeStructure':nodeStructure})
 
-def create(request):
+def home(request):
 	print("create request", request)
 	print(request.FILES)
 	usercode = ''
 	if 'usercode' in request.FILES:
 		usercode = request.FILES['usercode'].file.read().decode('utf-8')
 
-	path = os.path.realpath(__file__)	#..../mysite/main/views.py
-	path = os.path.dirname(path)		#..../mysite/main/
-	path = os.path.dirname(path)		#..../mysite/
+	path = os.path.realpath(__file__)	#..../spsSite/main/views.py
+	path = os.path.dirname(path)		#..../spsSite/main/
+	path = os.path.dirname(path)		#..../spsSite/
 	examples_path = os.path.join(path, "examples")
 	example_files = sorted(os.listdir(examples_path))
 
 	print({'usercode': usercode, 'example_files': example_files})
 
-	return render(request, "main/create.html", {'usercode': usercode, 'example_files': example_files})
+	return render(request, "main/home.html", {'usercode': usercode, 'example_files': example_files})
+
 
 def api(request):
 	command = request.POST['command']
@@ -54,11 +46,16 @@ def api(request):
 	
 	
 	if command == "start":
+		print("startolunk")
 		global SPS_MODEL
 		SPS_MODEL = StepPyStep()
 		start_answer = SPS_MODEL.start(**args)
-		get_answer = SPS_MODEL.request("get")
-		ret = {**start_answer, **get_answer}
+		print("S", start_answer)
+		if start_answer['compile_success'] == True:
+			get_answer = SPS_MODEL.request("get")
+			ret = {**start_answer, **get_answer}
+		else:
+			ret = start_answer
 	
 	elif command == "step":
 		ret = SPS_MODEL.request("step")

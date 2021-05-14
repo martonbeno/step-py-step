@@ -43,7 +43,6 @@ class Var:
 				print(f"HIBA {self.data}")
 				traceback.print_exc()
 		else:
-			#ret['value'] = self.data if not (self.is_udt or self.type is set) else str(self.data)
 			ret['value'] = str(self.data)
 
 		ret['children'] = []
@@ -55,7 +54,6 @@ class Var:
 	#process self and add unprocessed children
 	def process(self, allocated_pointers):
 		if self.pointer in allocated_pointers:
-			#print("már le vagyok foglalva")
 			self.defined_elsewhere = True
 		
 		else:
@@ -114,12 +112,11 @@ class Var:
 						self.children.append(child)
 				except AttributeError:
 					pass
-					#print("nincs dict-je ennek:", self.type)
 
 		return self.children
 
 def set_scope(node, is_local=None, is_global=None, pointer=None):
-	ret = False #return True iff anything is changed
+	ret = False #return True if anything is changed
 	if pointer is None or pointer == node['pointer']:
 		ret = True
 		if is_local is not None:
@@ -127,7 +124,6 @@ def set_scope(node, is_local=None, is_global=None, pointer=None):
 		if is_global is not None:
 			node['is_global'] = is_global
 	for child in node['children']:
-		#ret = ret or apply_to_tree(child, f)
 		ret = ret or set_scope(child, is_local, is_global, pointer)
 	return ret
 
@@ -178,7 +174,6 @@ def get_pointers_from_scope(frame, scope):
 		raise Exception("scope has to be 'locals' or 'globals'")
 
 	pointers = []
-	#TODO frame helyett lehet user-defined-object vagy container
 
 	generations = []
 

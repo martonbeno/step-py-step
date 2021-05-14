@@ -25,18 +25,16 @@ def generate_filename():
 
 class StepPyStep(pdb.Pdb):
     def __init__(self, **kwargs):
-        #print("létrejövök")
 
         self.request_q = multiprocessing.Queue()
         self.answer_q = multiprocessing.Queue()
         self.sps_output = StringIO()
         kwargs['stdout'] = self.sps_output
 
-        self.path = os.path.realpath(__file__) #...../mysite/main/StepPyStep.py
-        self.path = os.path.dirname(self.path) #...../mysite/main/
-        self.path = os.path.dirname(self.path) #...../mysite/
+        self.path = os.path.realpath(__file__) #...../spsSite/main/StepPyStep.py
+        self.path = os.path.dirname(self.path) #...../spsSite/main/
+        self.path = os.path.dirname(self.path) #...../spsSite/
         self.filename = None
-        #print(self.get_example_files())
 
         super().__init__(**kwargs)
     
@@ -60,12 +58,13 @@ class StepPyStep(pdb.Pdb):
 
         try:
             root = ast.parse(source_code)
-            if is_importing_node(root, source_code):
+            forbidden_node = is_importing_node(root, source_code)
+            if forbidden_node:
                 raise ContainsImportError()
             ret['compile_success'] = True
         except ContainsImportError:
             ret['compile_success'] = False
-            ret['error_message'] = "Error! Code cannot contain imports!"
+            ret['error_message'] = f"Error! Code contains forbidden node: {forbidden_node}"
             return ret
         except Exception:
             error_message = traceback.format_exc()
@@ -76,7 +75,6 @@ class StepPyStep(pdb.Pdb):
         
         self.expression_at_line = dict()
         expressions = get_exprs(source_code)
-        print("expressions:", expressions)
 
         for e in expressions:
             try:
@@ -88,12 +86,6 @@ class StepPyStep(pdb.Pdb):
         self.source_code = source_code
         ret['source_code'] = source_code
 
-        self.p = multiprocessing.Process(target=self.rs, args=())
-        self.p.start()
-        self.request("init")
-        return ret
-
-    def rs(self):
         user_codes_dir = os.path.join(self.path, 'usercodes')
         filename = generate_filename()
         self.filename_with_path = os.path.join(user_codes_dir, filename)
@@ -101,7 +93,10 @@ class StepPyStep(pdb.Pdb):
         with open(self.filename_with_path, 'w+', encoding='utf-8') as f:
             f.write(self.source_code)
 
-        self._runscript(self.filename_with_path)
+        self.p = multiprocessing.Process(target=lambda:self._runscript(self.filename_with_path), args=())
+        self.p.start()
+        self.request("init")
+        return ret
     
     def _runscript(self, filename):
         import __main__
@@ -127,6 +122,10 @@ class StepPyStep(pdb.Pdb):
         self.request_q.put(msg)
         ret = self.answer_q.get()
         if ret == "exit":
+            try:
+                os.remove(self.filename_with_path)
+            except Exception:
+                pass
             self.p.join()
         return ret
         
@@ -157,7 +156,6 @@ class StepPyStep(pdb.Pdb):
                 self.lastget = None
                 self.onecmd("ORIGINAL_PRINT=print")
                 self.onecmd("!STEP_PY_STEP_OUTPUT=''")
-                #self.onecmd("!def STEP_PY_STEP_PRINT(*args, sep=' ', end='\\n', file=None, flush=False):global STEP_PY_STEP_OUTPUT;STEP_PY_STEP_OUTPUT+=sep.join([str(x) for x in args])+end;ORIGINAL_PRINT(*args, sep, end, file, flush)")
                 self.onecmd("!def STEP_PY_STEP_PRINT(*args, sep=' ', end='\\n', file=None, flush=False):global STEP_PY_STEP_OUTPUT;STEP_PY_STEP_OUTPUT+=sep.join([str(x) for x in args])+end")
                 self.onecmd("!print=STEP_PY_STEP_PRINT")
                 self.answer_q.put("init")
@@ -257,9 +255,6 @@ class StepPyStep(pdb.Pdb):
                 ret['isover'] = False
                 ret['error'] = None
 
-                #debug("kimenet", self.sps_output.getvalue().split('\n'), "eddigtart")
-
-
                 for x in self.sps_output.getvalue().split('\n'):
                     if is_error_message(x):
                         ret['error'] = x
@@ -281,8 +276,6 @@ class StepPyStep(pdb.Pdb):
                 if lineno in self.expression_at_line:
                     #actual local vars
                     ret['expr'] = dict()
-                    #print(self.curframe.f_locals)
-                    #localvars = {rec['name']: rec['value'] for rec in ret['localvars'] if rec['is_local']}
                     node = self.expression_at_line[lineno]
                     ret['expr']['sequence'] = node2seq(node, self.source_code, self.curframe.f_locals)
                     ret['expr']['treant'] = node2treant(node, self.source_code, self.curframe.f_locals)
@@ -290,7 +283,6 @@ class StepPyStep(pdb.Pdb):
                     ret['expr'] = None
                 
 
-                #TODO helyettesíteni azzal, hogy megeyezik-e a válasz a lastget-tel
                 if self.lastget == ret:
                     self.request_q.put("step")
                 elif function in ["STEP_PY_STEP_OUTPUT", "STEP_PY_STEP_PRINT"] or filename_with_path == "<stdin>":
@@ -300,9 +292,7 @@ class StepPyStep(pdb.Pdb):
                     self.answer_q.put(ret)
             
             else:
-                print("elírtad")
-                filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)
-                self.answer_q.put(lineno)
+                self.answer_q.put("Invalid command")
 
 
     def is_still_in_user_code(self, frame):
@@ -314,38 +304,6 @@ class StepPyStep(pdb.Pdb):
             f = f.f_back
 
         return False
-
-        
-if __name__ == "__main__":
-    import time
-    filename = "ja2.py"
-    filename = "ja.py"
-
-    p = StepPyStep()
-    init_msg = p.start()
-    if not init_msg['compile_success']:
-        print("fordítási idejű hiba")
-        print(init_msg['error_message'])
-        exit()
-
-    print(init_msg)
-
-    while True:
-        print("várom a parancsokat")
-        r = input()
-        if r == "quit":
-            p.kill()
-            break
-        #time.sleep(1)
-        try:
-            ret = p.request(r)
-        except Exception:
-            print("inkább idelennnnnnnnnnnnnnnnnnnnnnn")
-        print("------RET", ret)
-        if ret == "exit":
-            break
-
-
 
 
 

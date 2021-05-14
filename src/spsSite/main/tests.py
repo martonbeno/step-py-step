@@ -9,9 +9,9 @@ class Tests(unittest.TestCase):
 		StepPyStep()
 
 	def get_example_files(self):
-		path = os.path.realpath(__file__)	#..../mysite/main/views.py
-		path = os.path.dirname(path)		#..../mysite/main/
-		path = os.path.dirname(path)		#..../mysite/
+		path = os.path.realpath(__file__)	#..../spsSites/main/views.py
+		path = os.path.dirname(path)		#..../spsSites/main/
+		path = os.path.dirname(path)		#..../spsSites/
 		examples_path = os.path.join(path, "examples")
 		example_files = sorted(os.listdir(examples_path))
 		return example_files
@@ -251,14 +251,12 @@ class Tests(unittest.TestCase):
 
 		msg = model.request("step")
 		s = msg['localvars'][-1]
-		print(s)
 		assert s['type'] == "set"
 		assert s['is_container'] == True
 		assert len(s['children']) == 3
 
 		msg = model.request("step")
 		t = msg['localvars'][-1]
-		print(s)
 		assert t['type'] == "tuple"
 		assert t['is_container'] == True
 		assert len(t['children']) == 4
@@ -296,6 +294,3 @@ class Tests(unittest.TestCase):
 
 
 unittest.main()
-
-#SPS = StepPyStep()
-#print(SPS)

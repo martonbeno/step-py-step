@@ -25,7 +25,7 @@ def eval_expr(node, variables):
         exe = compile(expr, filename="", mode="eval")
         return ast.Constant(eval(exe))
     
-    elif get_type(node) in ("BinOp"):
+    elif get_type(node) == "BinOp":
         cp = copy.deepcopy(node)
         cp.left = eval_expr(cp.left, variables)
         cp.right = eval_expr(cp.right, variables)
@@ -35,7 +35,7 @@ def eval_expr(node, variables):
         exe = compile(expr, filename="", mode="eval")
         return ast.Constant(eval(exe))
     
-    elif get_type(node) in ("BoolOp"):
+    elif get_type(node) == "BoolOp":
         cp = copy.deepcopy(node)
         for i in range(len(cp.values)):
             cp.values[i] = eval_expr(cp.values[i], variables)
@@ -44,7 +44,7 @@ def eval_expr(node, variables):
         exe = compile(expr, filename="", mode="eval")
         return ast.Constant(eval(exe))
     
-    elif get_type(node) in ("Compare"):
+    elif get_type(node) == "Compare":
         cp = copy.deepcopy(node)
         cp.left = eval_expr(cp.left, variables)
         for i in range(len(cp.comparators)):
@@ -90,32 +90,39 @@ def is_importing_node(node, source_code):
     return is_importing_tree(tree)
 
 def is_importing_tree(tree):
+    #print(tree['type'])
     if tree['type'] == "Import":
-        return True
+        return "import"
+    if tree['type'] == "Call":
+        function_name = next(x for x in tree['children'] if x['type'] == "Name")
+        if function_name['code'] in "open eval exec compile input":
+            return function_name['code']
 
     for child in tree['children']:
-        if is_importing_tree(child):
-            return True
+        forbidden_tree = is_importing_tree(child)
+        if forbidden_tree:
+            return forbidden_tree
     return False
 
 def node2tree(node, kod_mtx, variables, skip_eval=False):
     d = dict()
     d['type'] = get_type(node)
     
-    # if d['type'] not in ['Module', 'Store', 'Add', 'Mult', 'Div']:
-    if 'lineno' in node.__dict__:
-        
+    if 'lineno' in node.__dict__:    
         d['from_line'] = node.lineno-1
         d['to_line'] = node.end_lineno-1
         d['from_char'] = node.col_offset
         d['to_char'] = node.end_col_offset-1
+
         #ha egy sorban van az egész node
         if node.lineno == node.end_lineno:
             d['code'] = kod_mtx[node.lineno-1][node.col_offset:node.end_col_offset]
+
         #ha két sorban van az egész node
         elif node.lineno + 1 == node.end_lineno:
             d['code'] = kod_mtx[node.lineno-1][node.col_offset:]
             d['code'] += kod_mtx[node.end_lineno-1][:node.end_col_offset]
+
         #ha több, mint két sorban van a node
         elif node.lineno + 1 < node.end_lineno:
             d['code'] = kod_mtx[node.lineno-1][node.col_offset:]
@@ -130,19 +137,11 @@ def node2tree(node, kod_mtx, variables, skip_eval=False):
         if d['type'] in ("BinOp", "BoolOp", "Compare", "UnaryOp"):
             d['eval'] = eval_expr(node, variables).value
         elif d['type'] == "Name":
-            #d['eval'] = eval_expr(variables[node.id], variables).value
             d['eval'] = eval_expr(node, variables).value        
         elif d['type'] == "Constant":
             d['eval'] = node.value
         else:
             d['eval'] = None
-    '''
-    if d['type'] == "Assign":
-        targets = node.targets
-        t = targets[0].id
-        variables[t] = eval_expr(node.value)
-        print(variables)
-    '''
         
     
     d['children'] = [node2tree(child, kod_mtx, variables, skip_eval) for child in ast.iter_child_nodes(node)]
@@ -150,7 +149,6 @@ def node2tree(node, kod_mtx, variables, skip_eval=False):
 
 def tree2seq(node, start=True):
     if start:
-        #print(node)
         #deleting duplicates
         lst = tree2seq(node, False)
         ret = [lst[0]]
@@ -165,11 +163,9 @@ def tree2seq(node, start=True):
         
     elif node['type'] in ("Name", "UnaryOp"):
         return [node['code'], str(node['eval'])]
-        
 
 
     if node['type'] in ("BinOp", "BoolOp", "Compare"):
-        
         if node['type'] in ("BinOp", "Compare"):
             left_child = node['children'][0]
             right_child = node['children'][2]
@@ -211,7 +207,6 @@ def tree2seq(node, start=True):
             ret.append(sb)
         
         ret.append(str(node['eval']))
-        
         return ret
 
 def to_html(text):
@@ -229,8 +224,6 @@ def node2treant(node, code, variables):
     return treant
 
 def to_treant(node):
-    #kod_mtx = code.split('\n')
-    #node = node2tree(ast_node, kod_mtx, variables)
     #itt a sima node nem AST !
 
     ret = dict()
