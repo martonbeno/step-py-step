@@ -14,6 +14,7 @@ class Tests(unittest.TestCase):
 		path = os.path.dirname(path)		#..../spsSites/
 		examples_path = os.path.join(path, "examples")
 		example_files = sorted(os.listdir(examples_path))
+		print(example_files)
 		return example_files
 
 	def test_example_codes_exist(self):
@@ -25,6 +26,8 @@ class Tests(unittest.TestCase):
 		for example_file in example_files:
 			model = StepPyStep()
 			init_msg = model.start(example_file_name=example_file)
+			print(example_file)
+			print(init_msg)
 			assert init_msg['compile_success']
 			assert init_msg['error_message'] is None
 			model.request("exit")
@@ -95,7 +98,7 @@ class Tests(unittest.TestCase):
 			#print(msg)
 			msg = model.request("step")
 
-		variables = msg['localvars']
+		variables = msg['allvars']
 		assert all(v['is_local'] for v in variables)
 		assert all(v['is_global'] for v in variables)
 		assert all(v['defined_elsewhere'] == False for v in variables)
@@ -223,7 +226,7 @@ class Tests(unittest.TestCase):
 
 		msg = model.request("step")
 		
-		lst = msg['localvars'][-1]
+		lst = msg['allvars'][-1]
 		assert lst['name'] == 'lst'
 		assert lst['is_local'] == True
 		assert lst['is_global'] == True
@@ -244,28 +247,28 @@ class Tests(unittest.TestCase):
 
 
 		msg = model.request("step")
-		lst2 = msg['localvars'][-1]
+		lst2 = msg['allvars'][-1]
 		assert lst2['children'][-1]['defined_elsewhere'] == True
 		assert lst['pointer'] == lst2['children'][-1]['pointer']
 
 
 		msg = model.request("step")
-		s = msg['localvars'][-1]
+		s = msg['allvars'][-1]
 		assert s['type'] == "set"
 		assert s['is_container'] == True
 		assert len(s['children']) == 3
 
 		msg = model.request("step")
-		t = msg['localvars'][-1]
+		t = msg['allvars'][-1]
 		assert t['type'] == "tuple"
 		assert t['is_container'] == True
 		assert len(t['children']) == 4
 
 		msg = model.request("next")
-		assert msg['localvars'][-1]['type'] == "Class"
+		assert msg['allvars'][-1]['type'] == "Class"
 		
 		msg = model.request("step")
-		g = msg['localvars'][-1]
+		g = msg['allvars'][-1]
 		assert g['type'] == "G"
 		assert g['is_container'] == True
 		assert g['is_udt'] == True
@@ -273,7 +276,7 @@ class Tests(unittest.TestCase):
 
 
 		msg = model.request("step")
-		g = next(x for x in msg['localvars'] if x['name'] == 'g')
+		g = next(x for x in msg['allvars'] if x['name'] == 'g')
 		assert len(g['children']) == 1
 		g_child0 = g['children'][0]
 		assert g_child0['type'] == 'int'
@@ -281,7 +284,7 @@ class Tests(unittest.TestCase):
 
 
 		msg = model.request("step")
-		g = next(x for x in msg['localvars'] if x['name'] == 'g')
+		g = next(x for x in msg['allvars'] if x['name'] == 'g')
 		assert len(g['children']) == 2
 		g_child1 = g['children'][1]
 

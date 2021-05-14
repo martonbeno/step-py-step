@@ -1,2 +1,1 @@
-s = "asdf"
-
+s = "open"

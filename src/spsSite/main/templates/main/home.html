@@ -10,7 +10,7 @@
 		<script type="text/javascript" src="{% static 'sh_python.js' %}"></script>
 		<script>
 			var SOURCE_CODE = '';
-			var DATA = {'lineno':1, 'localvars':[]};
+			var DATA = {'lineno':1, 'allvars':[]};
 			var ROWS = {}; //key: pointer, value: element
 			var ONLY_GLOBAL_POINTERS = [];
 			var EXPRESSION_ANALYSIS_IT = null;
@@ -158,10 +158,10 @@
 					let formattedCode = getFormattedCode();
 					document.getElementById('ki').innerHTML = formattedCode;
 					sh_highlightDocument();
-					document.getElementById('variables').innerHTML = makeTable(DATA['localvars']);
+					document.getElementById('variables').innerHTML = makeTable(DATA['allvars']);
 					document.getElementById('outputField').innerHTML = DATA['output'];
 
-					addRowFunctions(DATA['localvars']);
+					addRowFunctions(DATA['allvars']);
 
 					scrollToArrow();
 
@@ -317,14 +317,14 @@
 				}
 			}
 
-			function makeTable(localvars){
-				console.log("maketable", localvars);
+			function makeTable(allvars){
+				console.log("maketable", allvars);
 				//TODO ha esetleg html cuccok lennének a táblázat mezőiben, azokat escape-elni valahogy
 
 				let ret = "<table border=1>";
 
-				for(let i=0; i<localvars.length; i++){
-					let v = localvars[i];
+				for(let i=0; i<allvars.length; i++){
+					let v = allvars[i];
 					let backgroundColor = v['is_local'] ? '#FFFFFF' : '#888888';
 					if(v['is_global'] && !v['is_local']){
 						ONLY_GLOBAL_POINTERS.push(v['pointer']);
@@ -375,27 +375,27 @@
 				return ret;
 			}
 
-			function getPointerMap(localvars, start=true){
+			function getPointerMap(allvars, start=true){
 				let ret = {};
 				if(start){
-					for(let i=0; i<localvars.length; i++){
-						let v = localvars[i];
+					for(let i=0; i<allvars.length; i++){
+						let v = allvars[i];
 						ret = Object.assign({}, ret, getPointerMap(v, false));
 					}
 					return ret;
 				} else {
-					let pointer = localvars['pointer'];
+					let pointer = allvars['pointer'];
 					ret[pointer] = document.getElementsByClassName("pointer_" + pointer);
-					for(let i=0; i<localvars['children'].length; i++){
-						let v = localvars['children'][i];
+					for(let i=0; i<allvars['children'].length; i++){
+						let v = allvars['children'][i];
 						ret = Object.assign({}, ret, getPointerMap(v, false));
 					}
 				}
 				return ret;
 			}
 
-			function addRowFunctions(localvars){
-				let pointerMap = getPointerMap(localvars);
+			function addRowFunctions(allvars){
+				let pointerMap = getPointerMap(allvars);
 				console.log("pointermap", pointerMap);
 				for(var pointer in pointerMap){
 					let objArr = pointerMap[pointer];

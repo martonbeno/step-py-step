@@ -11,12 +11,12 @@ from io import StringIO
 import inspect
 
 try:
-    from .expression_analysis import get_exprs, is_importing_node
+    from .expression_analysis import get_exprs, is_forbidden_node
 except ImportError:
-    from expression_analysis import get_exprs, is_importing_node
+    from expression_analysis import get_exprs, is_forbidden_node
 
 
-class ContainsImportError(Exception):
+class ContainsForbiddenNodeError(Exception):
     pass
 
 def generate_filename():
@@ -58,13 +58,13 @@ class StepPyStep(pdb.Pdb):
 
         try:
             root = ast.parse(source_code)
-            forbidden_node = is_importing_node(root, source_code)
+            forbidden_node = is_forbidden_node(root, source_code)
             if forbidden_node:
-                raise ContainsImportError()
+                raise ContainsForbiddenNodeError()
             ret['compile_success'] = True
-        except ContainsImportError:
+        except ContainsForbiddenNodeError:
             ret['compile_success'] = False
-            ret['error_message'] = f"Error! Code contains forbidden node: {forbidden_node}"
+            ret['error_message'] = f"Error! Code contains forbidden keyword: {forbidden_node}"
             return ret
         except Exception:
             error_message = traceback.format_exc()
@@ -260,14 +260,14 @@ class StepPyStep(pdb.Pdb):
                         ret['error'] = x
                         break
 
-                ret['localvars'] = get_pointers(self.curframe)
-                for v in ret['localvars']:
+                ret['allvars'] = get_pointers(self.curframe)
+                for v in ret['allvars']:
                     if v['name'] == 'STEP_PY_STEP_OUTPUT':
                         step_py_step_output = v
                         break
 
                 ret['output'] = step_py_step_output['value']
-                ret['localvars'].remove(v)
+                ret['allvars'].remove(v)
 
 
                 filename_with_path, lineno, function, code_context, index = inspect.getframeinfo(self.curframe)

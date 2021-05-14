@@ -54,7 +54,7 @@ def eval_expr(node, variables):
         exe = compile(expr, filename="", mode="eval")
         return ast.Constant(eval(exe))
 
-    raise InvalidExpressionError("naezabaj")
+    raise InvalidExpressionError()
 
 def contains_function_call(node):
     if isinstance(node, ast.Call):
@@ -84,22 +84,25 @@ def node2seq(node, code, variables):
     seq = tree2seq(tree)
     return seq
 
-def is_importing_node(node, source_code):
+def is_forbidden_node(node, source_code):
     kod_mtx = source_code.split('\n')
     tree = node2tree(node, kod_mtx, {}, skip_eval=True)
-    return is_importing_tree(tree)
+    return is_forbidden_tree(tree)
 
-def is_importing_tree(tree):
+def is_forbidden_tree(tree):
     #print(tree['type'])
     if tree['type'] == "Import":
         return "import"
     if tree['type'] == "Call":
-        function_name = next(x for x in tree['children'] if x['type'] == "Name")
-        if function_name['code'] in "open eval exec compile input":
-            return function_name['code']
+        try: #if Call node has a children of Name type
+            function_name = next(x for x in tree['children'] if x['type'] == "Name")
+            if function_name['code'] in "open eval exec compile input":
+                return function_name['code']
+        except StopIteration:
+            pass
 
     for child in tree['children']:
-        forbidden_tree = is_importing_tree(child)
+        forbidden_tree = is_forbidden_tree(child)
         if forbidden_tree:
             return forbidden_tree
     return False
