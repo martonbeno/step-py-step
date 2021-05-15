@@ -7,8 +7,6 @@ from .StepPyStep import StepPyStep
 import json
 import os
 
-# Create your views here.
-
 SPS_MODEL = None
 
 #expects nodeStructure GET parameter, renders tree.html with the corresponding
@@ -24,8 +22,6 @@ def tree(request):
 #renders the home page
 #if it gets a FILE message, it renders to the textarea
 def home(request):
-	print("create request", request)
-	print(request.FILES)
 	usercode = ''
 	if 'usercode' in request.FILES:
 		usercode = request.FILES['usercode'].file.read().decode('utf-8')
@@ -37,24 +33,18 @@ def home(request):
 	examples_path = os.path.join(path, "examples")
 	example_files = sorted(os.listdir(examples_path))
 
-	print({'usercode': usercode, 'example_files': example_files})
-
 	return render(request, "main/home.html", {'usercode': usercode, 'example_files': example_files})
 
 #forwarding message to the backend
 def api(request):
 	command = request.POST['command']
 	args = json.loads(request.POST['args'])
-
-	print("api be", command, args)
 	
 	
 	if command == "start":
-		print("startolunk")
 		global SPS_MODEL
 		SPS_MODEL = StepPyStep()
 		start_answer = SPS_MODEL.start(**args)
-		print("S", start_answer)
 		if start_answer['compile_success'] == True:
 			get_answer = SPS_MODEL.request("get")
 			ret = {**start_answer, **get_answer}
@@ -82,10 +72,6 @@ def api(request):
 	elif command == "exit":
 		SPS_MODEL.request("exit")
 		ret = {'exit':'yes'}
-
-	else:
-		print(f"kommand:{command}")
 	
 	ret = json.dumps(ret)
-	print("api response", ret)
 	return HttpResponse(ret)

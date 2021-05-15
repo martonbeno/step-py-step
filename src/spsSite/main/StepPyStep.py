@@ -202,7 +202,6 @@ class StepPyStep(pdb.Pdb):
                 try:
                     var_name, value = re.findall(r'modify (\w+) (.+)', msg)[0]
                 except Exception:
-                    debug("nem érvényes értékadás")
                     self.request_q.put("get")
                     break
 
@@ -220,7 +219,6 @@ class StepPyStep(pdb.Pdb):
                 try:
                     exec(line)
                 except Exception:
-                    debug("nem érvényes értékadás")
                     self.request_q.put("get")
                     break
 
@@ -234,7 +232,6 @@ class StepPyStep(pdb.Pdb):
                 try:
                     var_name, vartype, value = re.findall(r'newvar (\w+) (\w+) (.+)', msg)[0]
                 except Exception:
-                    debug("nem érvényes értékadás")
                     self.request_q.put("get")
                     break
 
@@ -258,7 +255,6 @@ class StepPyStep(pdb.Pdb):
                 try:
                     exec(line)
                 except Exception:
-                    debug("nem érvényes értékadás")
                     self.request_q.put("get")
                     break
 
@@ -271,7 +267,6 @@ class StepPyStep(pdb.Pdb):
                 try:
                     var_name = re.findall(r'delvar (\w+)', msg)[0]
                 except Exception:
-                    debug("nem érvényes változó törlés")
                     self.request_q.put("get")
                     break
 
@@ -279,7 +274,6 @@ class StepPyStep(pdb.Pdb):
                 try:
                     exec(f"{var_name}=1\ndel {var_name}")
                 except Exception:
-                    debug("nem érvényes változó törlés 2")
                     self.request_q.put("get")
                     break
 

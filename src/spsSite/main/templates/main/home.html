@@ -81,10 +81,9 @@
 
 
 						setData(JSON.stringify(data));
-						sh_highlightDocument(); //syntax highlight the analyzed code
+						sh_highlightDocument(); //foreign library to syntax highlight code
 					}
 					else{
-						console.log("itt");
 						alert(data['error_message']);
 						document.getElementById('outputField').innerHTML = data['error_message'];
 					}
@@ -95,7 +94,6 @@
 			function step(){
 				//if there is an expression analysis running currently, make a step in that
 				if(EXPRESSION_ANALYSIS_IT !== null){
-					console.log("steppeljünk");
 					EXPRESSION_ANALYSIS_IT ++;
 					setData(null);
 				}
@@ -127,14 +125,12 @@
 				//set the width of the expression analysis field, according
 				//to the longes string in the sequence
 				let expressionAnalysisSpan = document.getElementById('expressionAnalysisSpan');
-				console.log(expressionAnalysisSpan.clientWidth);
 				let seq = DATA['expr']['sequence'];
 				let maxWidth = 0;
 				let actWidth;
 				for(let i=0; i<seq.length; i++){
 					expressionAnalysisSpan.innerHTML = seq[i];
 					actWidth = expressionAnalysisSpan.clientWidth;
-					console.log(actWidth);
 					if(actWidth > maxWidth)
 						maxWidth = actWidth
 				}
@@ -157,7 +153,6 @@
 			function exit_code(){
 				py_api_request('exit', {}, function(data){
 					DATA = JSON.parse(data);
-					console.log("kiléptem");
 					history.go(0);
 					location.reload();
 					return false;
@@ -173,7 +168,7 @@
 					let formattedCode = getFormattedCode();
 					//update arrow pointing at the current line
 					document.getElementById('ki').innerHTML = formattedCode;
-					sh_highlightDocument();
+					sh_highlightDocument(); //foreign library to syntax highlight code
 					//update variables table
 					document.getElementById('variables').innerHTML = makeTable(DATA['allvars']);
 					//update output field
@@ -283,18 +278,6 @@
 				}
 				return ret;
 			}
-			/*
-			function makeCodeMtx(){
-				let lines = SOURCE_CODE.split('\n');
-				let ret = [];
-				for(let i=0; i<lines.length; i++){
-					console.log(lines[i]);
-					let maybeArrow = DATA['lineno'] == i+1 ? '➔' : '';
-					ret.push([maybeArrow, lines[i]]);
-				}
-				return ret;
-			}
-			*/
 
 			//add new variable
 			function addVariableButtonClicked(){
@@ -326,7 +309,6 @@
 				function onKeyUp(event){
 					event.preventDefault();
 					if(event.keyCode === 13 && inputFields.includes(document.activeElement)){ //ENTER
-						console.log("adjuk be");
 						let args = {
 							'var_name': inputFields[1].value,
 							'var_type': inputFields[2].value,
@@ -463,7 +445,6 @@
 								if(objArr[i] == elementsToHighlight[j])
 									continue;
 								elementsToHighlight[j].classList.add('highlighted-var');
-								console.log("hozzáadom");
 							}
 						}
 
@@ -503,7 +484,6 @@
 							//send delvar command to the backend
 							let deleteCell = row.childNodes[0];
 							if(deleteCell === cell){
-								console.log("annyi");
 								let args = {'var_name': leftCell.innerText}
 								py_api_request('delvar', args, function(data){
 									setData(data);
@@ -532,8 +512,6 @@
 								event2.preventDefault();
 								let self = event2.target;
 								if(event2.keyCode === 13 && self === document.activeElement){ //ENTER
-									console.log("első", event2);
-									console.log("changeto", self.value);
 									IS_MODIFYING = false;
 
 									let args = {'var_name': leftCell.innerText, 'value': self.value}
