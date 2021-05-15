@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpRequest
 
 from .forms import CreateNewList
-from .models import Szamlalo
 from .StepPyStep import StepPyStep
 
 import json
@@ -12,6 +11,8 @@ import os
 
 SPS_MODEL = None
 
+#expects nodeStructure GET parameter, renders tree.html with the corresponding
+#tree visualisation
 def tree(request):
 	try:
 		nodeStructure = request.GET['nodeStructure']
@@ -20,6 +21,8 @@ def tree(request):
 	
 	return render(request, "main/tree.html", {'nodeStructure':nodeStructure})
 
+#renders the home page
+#if it gets a FILE message, it renders to the textarea
 def home(request):
 	print("create request", request)
 	print(request.FILES)
@@ -27,6 +30,7 @@ def home(request):
 	if 'usercode' in request.FILES:
 		usercode = request.FILES['usercode'].file.read().decode('utf-8')
 
+	#collecting demo codes
 	path = os.path.realpath(__file__)	#..../spsSite/main/views.py
 	path = os.path.dirname(path)		#..../spsSite/main/
 	path = os.path.dirname(path)		#..../spsSite/
@@ -37,7 +41,7 @@ def home(request):
 
 	return render(request, "main/home.html", {'usercode': usercode, 'example_files': example_files})
 
-
+#forwarding message to the backend
 def api(request):
 	command = request.POST['command']
 	args = json.loads(request.POST['args'])

@@ -1,7 +1,7 @@
 <html>
 	<head>
 		{% load static %}
-		<link rel="stylesheet" href="{% static 'masikstyle.css' %}">
+		<link rel="stylesheet" href="{% static 'style.css' %}">
 		<link rel="stylesheet" href="{% static 'sh_style.css' %}">
 		<link rel="stylesheet" href="{% static 'Treant.css' %}">
 
@@ -10,11 +10,12 @@
 		<script type="text/javascript" src="{% static 'sh_python.js' %}"></script>
 		<script>
 			var SOURCE_CODE = '';
-			var DATA = {'lineno':1, 'allvars':[]};
+			var DATA = {'lineno':1, 'allvars':[]}; //this global variable stores the dictionary with the current state
 			var ROWS = {}; //key: pointer, value: element
-			var ONLY_GLOBAL_POINTERS = [];
+			//var ONLY_GLOBAL_POINTERS = [];
 			var EXPRESSION_ANALYSIS_IT = null;
 			
+			//AJAX call to the API, that communicates with the backend
 			function py_api_request(command, args, callback){
 				$.ajax({
 					url: '/api/',
@@ -30,6 +31,7 @@
 				});
 			}
 			
+			//readCode button clicked
 			function readcode(){
 				let source_code = document.getElementById('ta').value;
 
@@ -37,23 +39,25 @@
 				startAnalysis(args);
 			}
 
+
 			function startAnalysis(args){
-				console.log("letsgooooooooooOO");
 				py_api_request('start', args, function(data){
-					console.log("aaaaa", data);
 					data = JSON.parse(data);
 
 					console.log(data);
 					if(data['compile_success']){
+						//starting the analysis
 						SOURCE_CODE = data['source_code'];
 						
-
+						//hide all objects that are for preAnalysis
 						let objectsToHide = document.getElementsByClassName("preAnalysis");
 						for(let i=0; i<objectsToHide.length; i++){
 							objectsToHide[i].style.visibility = "hidden";
 							objectsToHide[i].style.maxHeight = "0px";
 
 						}
+
+						//show all objects that are for duringAnalysis
 						let objectsToShow = document.getElementsByClassName("duringAnalysis");
 						for(let i=0; i<objectsToShow.length; i++){
 							objectsToShow[i].style.visibility = "visible";
@@ -61,6 +65,7 @@
 						}
 
 
+						//make the analyzed code field and the output field visible
 						let formattedCode = getFormattedCode();
 						let ki = document.getElementById('ki');
 						ki.innerHTML = formattedCode;
@@ -76,7 +81,7 @@
 
 
 						setData(JSON.stringify(data));
-						sh_highlightDocument();
+						sh_highlightDocument(); //syntax highlight the analyzed code
 					}
 					else{
 						console.log("itt");
@@ -86,13 +91,16 @@
 				});
 			}
 			
+			//step button pressed
 			function step(){
+				//if there is an expression analysis running currently, make a step in that
 				if(EXPRESSION_ANALYSIS_IT !== null){
 					console.log("steppeljünk");
 					EXPRESSION_ANALYSIS_IT ++;
 					setData(null);
 				}
 
+				//otherwise step the script
 				else{
 					py_api_request('step', {}, function(data){
 						setData(data);
@@ -100,21 +108,25 @@
 				}
 			}
 			
+			//next button pressed
 			function next(){
+				//if there is an expression analysis running currently, exit it and step to the next line
 				if(EXPRESSION_ANALYSIS_IT !== null)
 					EXPRESSION_ANALYSIS_IT = DATA['expr']['sequence'].length;
 
+				//otherwise step to the next line
 				py_api_request('next', {}, function(data){
 					setData(data);
 				});
 			}
 			
+			//analyze expression button pressed
 			function analyzeExpression(){
 				EXPRESSION_ANALYSIS_IT = 0;
 
+				//set the width of the expression analysis field, according
+				//to the longes string in the sequence
 				let expressionAnalysisSpan = document.getElementById('expressionAnalysisSpan');
-				//expressionAnalysisField.style.width = 50;
-				//expressionAnalysisSpan.innerHTML = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 				console.log(expressionAnalysisSpan.clientWidth);
 				let seq = DATA['expr']['sequence'];
 				let maxWidth = 0;
@@ -127,18 +139,21 @@
 						maxWidth = actWidth
 				}
 				
+				//make the expression analysis field visible
 				document.getElementById('expressionAnalysisField').style.width = 1*maxWidth;
 				document.getElementById('expressionAnalysisField').style.height = "50px";
 
 				setData(null);
 			}
 
+			//open the expression tree in a new window
 			function openTreant(){
 				let nodeStructure = DATA['expr']['treant'];
 				nodeStructure = JSON.stringify(nodeStructure);
 				window.open("../tree?nodeStructure=" + nodeStructure, "Tree", "height=600,width=800");
 			}
 			
+			//exit code button pressed, stop analysis
 			function exit_code(){
 				py_api_request('exit', {}, function(data){
 					DATA = JSON.parse(data);
@@ -156,9 +171,12 @@
 				if(DATA['error'] === null && DATA['isover'] === false){
 
 					let formattedCode = getFormattedCode();
+					//update arrow pointing at the current line
 					document.getElementById('ki').innerHTML = formattedCode;
 					sh_highlightDocument();
+					//update variables table
 					document.getElementById('variables').innerHTML = makeTable(DATA['allvars']);
+					//update output field
 					document.getElementById('outputField').innerHTML = DATA['output'];
 
 					addRowFunctions(DATA['allvars']);
@@ -170,30 +188,34 @@
 					let openTreantButton = document.getElementById('treantButton');
 					let expressionAnalysisField = document.getElementById('expressionAnalysisField');
 					let expressionAnalysisSpan = document.getElementById('expressionAnalysisSpan');
-					//ha el lehet indítani az expression anaylsis-t, de még nem indítottuk el
+
+					//if it is possible to start an expression analysis, but we haven't started it yet
 					if(DATA['expr'] !== null && EXPRESSION_ANALYSIS_IT === null){
-						//expressionAnalysisButton.style.display = "block";
 						expressionAnalysisButton.style.visibility = "visible";
 						expressionAnalysisButton.style.maxHeight = "none";
 					}
 
-					//ha már megy
+					//if the expression analysis is running
 					else if(EXPRESSION_ANALYSIS_IT !== null &&
 						DATA['expr'] !== null &&
 						EXPRESSION_ANALYSIS_IT < DATA['expr']['sequence'].length){
+
+						//hide expression analysis button
 						expressionAnalysisButton.style.visibility = "hidden";
 						expressionAnalysisButton.style.maxHeight = "0px";
 
+						//show expression analysis field
 						expressionAnalysisField.style.visibility = "visible";
 						expressionAnalysisField.style.maxHeight = "none";
 
+						//show open treant button
 						openTreantButton.style.visibility = "visible";
 						openTreantButton.style.maxHeight = "none";
 
 						expressionAnalysisSpan.innerHTML = DATA['expr']['sequence'][EXPRESSION_ANALYSIS_IT];
 					}
 
-					//ha nincs expression analysis
+					//if there is no expression analysis
 					else{
 						expressionAnalysisButton.style.visibility = "hidden";
 						expressionAnalysisButton.style.maxHeight = "0px";
@@ -210,6 +232,8 @@
 
 				//runtime error on user's code or code is over
 				else{
+					//hide all 'duringAnalysis' objects,
+					//as the analysis stopped because of an error
 					let objectsToHide = document.getElementsByClassName("duringAnalysis");
 					for(let i=0; i<objectsToHide.length; i++){
 						if(objectsToHide[i].classList.contains("duringError"))
@@ -222,6 +246,7 @@
 					document.getElementById('ki').style.visibility = "visible";
 					document.getElementById('ki').style.maxHeight = "none";
 
+					//print the error message to the outputField
 					if(DATA['error'] !== null){
 						document.getElementById('outputField').style.visibility = "visible";
 						document.getElementById('outputField').style.maxHeight = "none";
@@ -230,6 +255,8 @@
 				}
 			}
 
+			//if the code is long, we autoscroll, so that the arrow will be in the middle
+			//of the visible part of the code section
 			function scrollToArrow(){
 				let lineno = DATA['lineno'];
 				let total_lines = SOURCE_CODE.split('\n').length;
@@ -240,6 +267,7 @@
 				document.getElementById("ki").scroll(0, scroll_to_pixel);
 			}
 
+			//puts the arrow character to the left of the current line
 			function getFormattedCode(){
 				let lines = SOURCE_CODE.split('\n');
 				let ret = "";
@@ -255,7 +283,7 @@
 				}
 				return ret;
 			}
-			
+			/*
 			function makeCodeMtx(){
 				let lines = SOURCE_CODE.split('\n');
 				let ret = [];
@@ -266,19 +294,23 @@
 				}
 				return ret;
 			}
+			*/
 
+			//add new variable
 			function addVariableButtonClicked(){
+				//create a table of 4 cells
 				let table = document.getElementById("variables").childNodes[0];
 				let nrows = table.rows.length;
 				let newRow = table.insertRow(nrows);
 				newRow.classList.add("local-var");
-				let cell0 = newRow.insertCell(0);
+				let cell0 = newRow.insertCell(0); //the first column is reserved for the delete button
 				let cell1 = newRow.insertCell(1);
 				let cell2 = newRow.insertCell(2);
 				let cell3 = newRow.insertCell(3);
 				let cells = [cell0, cell1, cell2, cell3];
 				let inputFields = [null];
 
+				//put input fields to the last three cells
 				for(let i=1; i<4; i++){
 					let actcell = cells[i];
 					let inputField = document.createElement("INPUT");
@@ -288,9 +320,11 @@
 					inputFields.push(inputField);
 				}
 
+				//add listener to the ENTER and ESCAPE buttons
+				//ENTER: send newvar request to the backend
+				//ESCAPE: exit 'new variable' mode
 				function onKeyUp(event){
 					event.preventDefault();
-					//let self = event.target;
 					if(event.keyCode === 13 && inputFields.includes(document.activeElement)){ //ENTER
 						console.log("adjuk be");
 						let args = {
@@ -317,24 +351,30 @@
 				}
 			}
 
+			//generate table for the variables
 			function makeTable(allvars){
-				console.log("maketable", allvars);
-				//TODO ha esetleg html cuccok lennének a táblázat mezőiben, azokat escape-elni valahogy
 
 				let ret = "<table border=1>";
 
 				for(let i=0; i<allvars.length; i++){
 					let v = allvars[i];
-					let backgroundColor = v['is_local'] ? '#FFFFFF' : '#888888';
+					//let backgroundColor = v['is_local'] ? '#FFFFFF' : '#888888';
+					/*
 					if(v['is_global'] && !v['is_local']){
 						ONLY_GLOBAL_POINTERS.push(v['pointer']);
 					}
+					*/
 
 					ret += '<tr style="min-height:23px;" ';
+					//let the row have a name of the memory address of the variable
+					//this way we can easily pair references
 					ret += 'class="pointer_' + v['pointer'];
+					//let another classname be either local-var or nonlocal-var
+					//later, we color the background accordingly
 					ret += v['is_local'] ? ' local-var' : ' nonlocal-var';
 					ret += '">';
 					ret += '<td style="min-width:10px;text-align:center;">';
+					//if the variable is local, we can delete it
 					if(v['is_local']){
 						ret += '<img src="/static/x.png" alt="Delete row">'
 					}
@@ -343,6 +383,7 @@
 					
 					if(! v['is_container']){
 						
+						//if it's not only a reference, fill out the type and the value
 						if(! v['defined_elsewhere']){
 							ret += '<td style="min-width:50px">' + v['type'] + "</td>";
 
@@ -357,6 +398,8 @@
 								value = v['value'];
 							ret += '<td style="white-space: pre-wrap; min-width:100px">' + value + "</td>";
 						}
+
+						//otherwise, just mark it as ( reference )
 						else{
 							ret += '<td style="min-width:50px"></td>';
 							ret += '<td style="min-width:50px">( reference )</td>';
@@ -364,6 +407,7 @@
 
 					}
 
+					//if it is a container, generate another table with its content, recursively
 					else{
 						ret += '<td style="min-width:50px">' + v['type'] + "</td>";
 						ret += '<td style="min-width:50px">' + makeTable(v['children']) + "</td>";
@@ -375,6 +419,9 @@
 				return ret;
 			}
 
+			//returns a dictionary where the
+			//keys are the memory addresses of the variables
+			//values are arrays of HTML elements of the rows that correspond to the memory address
 			function getPointerMap(allvars, start=true){
 				let ret = {};
 				if(start){
@@ -394,17 +441,23 @@
 				return ret;
 			}
 
+
+			//add listeners to the rows of the variable table,
+			//so that it can highlight other variables on the same
+			//memory address, when hovered over,
+			//or to enter modify-variable mode when clicked
+			//or delete it when the X is clicked
 			function addRowFunctions(allvars){
 				let pointerMap = getPointerMap(allvars);
-				console.log("pointermap", pointerMap);
 				for(var pointer in pointerMap){
 					let objArr = pointerMap[pointer];
 					let className = "pointer_" + pointer;
 
 					for(let i=0; i<objArr.length; i++){
 
+						//when hovered over, highlight rows that represent
+						//variables with the same memory address
 						function mouseEnter(event){
-							console.log("rajta vagyok");
 							let elementsToHighlight = document.getElementsByClassName(className);
 							for(let j=0; j<elementsToHighlight.length; j++){
 								if(objArr[i] == elementsToHighlight[j])
@@ -414,7 +467,7 @@
 							}
 						}
 
-						//TODO eredeti színre visszaállítani
+						//when not hovered over, unhighlight the rows
 						function mouseLeave(event){
 							let elementsToHighlight = document.getElementsByClassName(className);
 							for(let j=0; j<elementsToHighlight.length; j++){
@@ -422,11 +475,14 @@
 							}
 						}
 
+						//enter modify variable mode when clicked,
+						//or delete it when the X is clicked
 						function mouseClick(event){
+							//if we are already modifying a variable, do nothing
 							if(IS_MODIFYING)
 								return;
 
-							console.log(event);
+							//get the lowest level row that covers the clicked area
 							let cell = event.target;
 							while(cell.nodeName != "TD")
 								cell = cell.parentElement;
@@ -436,6 +492,7 @@
 							while(row.nodeName != "TR")
 								row = row.parentElement;
 
+							//if it is nonlocal, we cannot modify it
 							if(row.classList.contains('nonlocal-var'))
 								return;
 
@@ -443,6 +500,7 @@
 							let leftCell = row.childNodes[1];
 							let rightCell = row.childNodes[row.childNodes.length-1];
 
+							//send delvar command to the backend
 							let deleteCell = row.childNodes[0];
 							if(deleteCell === cell){
 								console.log("annyi");
@@ -453,9 +511,9 @@
 								
 								return;
 							}
-							else
-								console.log("ezek", deleteCell, cell);
 
+
+							//generate user inputs inside of value cell
 							let changeFrom = rightCell.innerHTML;
 							let isDataStructure = rightCell.innerText !== rightCell.innerHTML;
 							let inputField = document.createElement("INPUT");
@@ -465,6 +523,10 @@
 
 							inputField.focus();
 							IS_MODIFYING = true;
+
+							//add listener to the ENTER and ESCAPE buttons
+							//ENTER: send modify request to the backend
+							//ESCAPE: exit 'modify variable' mode
 
 							inputField.addEventListener("keyup", function(event2){
 								event2.preventDefault();

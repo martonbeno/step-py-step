@@ -1,3 +1,5 @@
+#if an output starts with one of these error messages
+#we assume, the script  has gotten to a runtime error
 def is_error_message(msg):
 	ALL_ERRORS = [
 	'ArithmeticError',

@@ -4,15 +4,16 @@ import traceback
 import copy
 import json
 
-
+#represents a variable
 class Var:
 	def __init__(self, pointer, name):
-		self.pointer = pointer
-		self.name = name
-		self.is_udt = False
-		self.is_container = False
-		self.children = []
+		self.pointer = pointer #memory address
+		self.name = name 
+		self.is_udt = False #is user-defined type ?
+		self.is_container = False #list, set, tuple, dict, UDT
+		self.children = [] #if it's a container, this list contains the Var objects that represent the elements contained in the variable
 
+	#converts the object to a dictionary that is convertable to a JSON
 	def get_dict(self):
 		ret = dict()
 
@@ -20,13 +21,14 @@ class Var:
 		if not self.defined_elsewhere and self.type == "Class" and not self.is_udt:
 			return ret
 
-		ret['name'] = str(self.name)
+		ret['name'] = str(self.name) #we need str format, because otherwise it may not convert to JSON
 		ret['pointer'] = self.pointer
 		ret['is_local'] = None
 		ret['is_global'] = None
 		ret['is_udt'] = self.is_udt
 		ret['is_container'] = self.is_container
 		ret['defined_elsewhere'] = self.defined_elsewhere
+
 		if self.defined_elsewhere:
 			ret['type'] = None
 		elif self.type is type:
@@ -52,7 +54,10 @@ class Var:
 
 
 	#process self and add unprocessed children
+	#this is not a recursive function, it needs to be called to the children separately
 	def process(self, allocated_pointers):
+
+		#if the variable is defined earlier in the code, there is no need to process it
 		if self.pointer in allocated_pointers:
 			self.defined_elsewhere = True
 		
@@ -73,6 +78,8 @@ class Var:
 			elif inspect.ismodule(self.type):
 				self.is_udt = False
 
+
+			#generate children without processing them
 			elif self.type in (list, tuple):
 				self.is_udt = False
 				self.is_container = True
@@ -115,6 +122,9 @@ class Var:
 
 		return self.children
 
+#recursively set the node to the given scope(s)
+#if the pointer parameter is not None, it only sets those
+#nodes, that has the same value in its pointer field
 def set_scope(node, is_local=None, is_global=None, pointer=None):
 	ret = False #return True if anything is changed
 	if pointer is None or pointer == node['pointer']:
@@ -127,6 +137,7 @@ def set_scope(node, is_local=None, is_global=None, pointer=None):
 		ret = ret or set_scope(child, is_local, is_global, pointer)
 	return ret
 
+#returns set of all pointers in the node or below it
 def get_all_pointers(node):
 	ret = set()
 	ret.add(node['pointer'])
@@ -134,7 +145,7 @@ def get_all_pointers(node):
 		ret = ret.union(get_all_pointers(child))
 	return ret
 
-
+#returns dictionary formatted tree structure, containing all variables and their attributes
 def get_pointers(frame):
 	local_tree = get_pointers_from_scope(frame, "local")
 	global_tree = get_pointers_from_scope(frame, "global")
@@ -164,7 +175,7 @@ def get_pointers(frame):
 
 	return ret
 
-
+#returns dictionary formatted tree structure, containing local or global variables and their attributes
 def get_pointers_from_scope(frame, scope):
 	if scope == "local":
 		frame_scope = frame.f_locals

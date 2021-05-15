@@ -7,7 +7,8 @@ class InvalidExpressionError(Exception):
 
 def get_type(node):
     return node.__class__.__name__
-    
+
+#returns the value of any Expression node as an ast.Constant    
 def eval_expr(node, variables):
     if get_type(node) == "Constant":
         return node
@@ -56,6 +57,7 @@ def eval_expr(node, variables):
 
     raise InvalidExpressionError()
 
+#returns True if the node, or any node below it is of ast.Call type
 def contains_function_call(node):
     if isinstance(node, ast.Call):
         return True
@@ -64,6 +66,7 @@ def contains_function_call(node):
             return True
     return False
 
+#returns root of every subtree that is built of expressions
 def get_exprs(code):
     node = ast.parse(code)
 
@@ -78,17 +81,13 @@ def get_exprs(code):
 
     return ret
 
-def node2seq(node, code, variables):
-    kod_mtx = code.split('\n')
-    tree = node2tree(node, kod_mtx, variables)
-    seq = tree2seq(tree)
-    return seq
-
+#returns True if the node or any node below it is of forbidden type
 def is_forbidden_node(node, source_code):
     kod_mtx = source_code.split('\n')
     tree = node2tree(node, kod_mtx, {}, skip_eval=True)
     return is_forbidden_tree(tree)
 
+#returns True if the tree contains any forbidden-typed nodes
 def is_forbidden_tree(tree):
     #print(tree['type'])
     if tree['type'] == "Import":
@@ -107,6 +106,9 @@ def is_forbidden_tree(tree):
             return forbidden_tree
     return False
 
+#converts an ast node to a dictionary-structure, that contains
+#the evaluation of the node, if it is of an expression type,
+#and the part of the source code that the node represents
 def node2tree(node, kod_mtx, variables, skip_eval=False):
     d = dict()
     d['type'] = get_type(node)
@@ -150,6 +152,16 @@ def node2tree(node, kod_mtx, variables, skip_eval=False):
     d['children'] = [node2tree(child, kod_mtx, variables, skip_eval) for child in ast.iter_child_nodes(node)]
     return d
 
+#returns a list that represents the evaluation sequence of
+#the expression node in the parameter
+def node2seq(node, code, variables):
+    kod_mtx = code.split('\n')
+    tree = node2tree(node, kod_mtx, variables)
+    seq = tree2seq(tree)
+    return seq
+
+#returns a list that represents the evaluation sequence of
+#the dictionary tree in the parameter
 def tree2seq(node, start=True):
     if start:
         #deleting duplicates
@@ -212,6 +224,7 @@ def tree2seq(node, start=True):
         ret.append(str(node['eval']))
         return ret
 
+#replaces the characters that we are not able display in the Treant.js generated tree
 def to_html(text):
     text = text.replace("<=", " LESSER OR EQUAL THAN ")
     text = text.replace(">=", " GREATER OR EQUAL THAN ")
@@ -220,12 +233,14 @@ def to_html(text):
     text = text.replace("+", " PLUS ")
     return text.replace('\n', ';').replace('\t', '    ')
 
+#generated the json-styled dictionary tree that the Treant.js module expects from an ast node
 def node2treant(node, code, variables):
     kod_mtx = code.split('\n')
     tree = node2tree(node, kod_mtx, variables)
     treant = to_treant(tree)
     return treant
 
+#generated the json-styled dictionary tree that the Treant.js module expects from a dictionary tree
 def to_treant(node):
     #itt a sima node nem AST !
 
